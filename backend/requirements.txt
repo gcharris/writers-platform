@@ -1,4 +1,5 @@
 # Writers Platform - Unified Backend Dependencies
+# Optimized for Railway deployment
 
 # ============================================
 # Web Framework & API (from Community)
@@ -46,9 +47,8 @@ google-auth>=2.23.0
 python-dotenv>=1.0.0
 
 # ============================================
-# Knowledge Graph (Cognee)
+# Graph Analysis (lightweight alternative to cognee)
 # ============================================
-cognee>=0.1.26
 networkx>=3.0  # For graph analysis
 
 # ============================================
@@ -69,3 +69,12 @@ charset-normalizer>=3.0.0  # Text encoding detection
 # ============================================
 # Using existing AI SDKs for detection (anthropic, openai)
 # Custom implementation using Claude/GPT for content analysis
+
+# ============================================
+# REMOVED FOR DEPLOYMENT OPTIMIZATION:
+# ============================================
+# cognee>=0.1.26  # REMOVED: Not actively used (use_cognee=False)
+#   - This single package was pulling in 50+ dependencies:
+#   - onnxruntime (500MB+), fastembed, lancedb, kuzu, litellm, etc.
+#   - Causing Railway deployment timeouts
+#   - Can be re-added later when knowledge graph features are needed
