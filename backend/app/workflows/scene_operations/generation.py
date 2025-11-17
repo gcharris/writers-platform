@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
-from factory.core.workflow_engine import Workflow, WorkflowResult, WorkflowStatus
+from app.core.workflow_engine import Workflow, WorkflowResult, WorkflowStatus
 from datetime import datetime
 
 logger = logging.getLogger(__name__)

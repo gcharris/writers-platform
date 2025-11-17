@@ -4,7 +4,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
-from factory.core.workflow_engine import Workflow, WorkflowResult
+from app.core.workflow_engine import Workflow, WorkflowResult
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +74,7 @@ class BaseWorkflow(Workflow, ABC):
             WorkflowResult from execution
         """
         from datetime import datetime
-        from factory.core.workflow_engine import WorkflowStatus
+        from app.core.workflow_engine import WorkflowStatus
 
         try:
             # Setup

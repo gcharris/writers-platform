@@ -44,3 +44,7 @@ class Project(Base):
     user = relationship("User", backref="projects")
     scenes = relationship("Scene", back_populates="project", cascade="all, delete-orphan")
     analysis_results = relationship("AnalysisResult", back_populates="project", cascade="all, delete-orphan")
+
+    # Manuscript structure (from factory-core integration)
+    manuscript_acts = relationship("ManuscriptAct", back_populates="project", cascade="all, delete-orphan", order_by="ManuscriptAct.act_number")
+    reference_files = relationship("ReferenceFile", back_populates="project", cascade="all, delete-orphan")

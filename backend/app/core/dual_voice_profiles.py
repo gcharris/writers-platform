@@ -9,7 +9,7 @@ This enables beginners to start with personal voice, then upgrade to fiction voi
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional
 from datetime import datetime
-from factory.core.voice_extractor import VoiceProfile, MetaphorDomain, AntiPattern, QualityCriteria
+from app.core.voice_extractor import VoiceProfile, MetaphorDomain, AntiPattern, QualityCriteria
 
 
 @dataclass

@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Optional, List, Dict, Tuple
 import logging
 
-from factory.core.manuscript import Manuscript, Act, Chapter, Scene
+from app.core.manuscript import Manuscript, Act, Chapter, Scene
 
 logger = logging.getLogger(__name__)
 

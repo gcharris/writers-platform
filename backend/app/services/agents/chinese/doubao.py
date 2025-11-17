@@ -8,7 +8,7 @@ from typing import Any, Dict, Optional
 
 import httpx
 
-from factory.agents.base_agent import BaseAgent, AgentConfig
+from app.services.agents.base_agent import BaseAgent, AgentConfig
 
 logger = logging.getLogger(__name__)
 

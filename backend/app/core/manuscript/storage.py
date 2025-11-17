@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Optional
 from datetime import datetime
 
-from factory.core.manuscript.structure import Manuscript, Scene
+from app.core.manuscript.structure import Manuscript, Scene
 
 
 class ManuscriptStorage:

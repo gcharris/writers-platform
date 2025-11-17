@@ -7,9 +7,9 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from factory.core.agent_pool import AgentPool, ParallelResult
-from factory.core.workflow_engine import WorkflowResult, WorkflowStatus
-from factory.workflows.base_workflow import BaseWorkflow
+from app.core.agent_pool import AgentPool, ParallelResult
+from app.core.workflow_engine import WorkflowResult, WorkflowStatus
+from app.workflows.base_workflow import BaseWorkflow
 
 logger = logging.getLogger(__name__)
 

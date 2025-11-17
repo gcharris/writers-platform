@@ -123,7 +123,7 @@ class SkillOrchestrator:
         """Initialize skill providers."""
         # Import providers (lazy loading to avoid circular dependencies)
         try:
-            from factory.mcp.claude_skill_bridge import MCPSkillBridge
+            from app.mcp.claude_skill_bridge import MCPSkillBridge
             self.providers[SkillProvider.CLAUDE_SKILL] = {
                 "class": MCPSkillBridge,
                 "instance": None,
@@ -141,7 +141,7 @@ class SkillOrchestrator:
     def _register_native_agents(self):
         """Register native Python skill implementations."""
         # Scene Analyzer Agent
-        from factory.agents.explants.scene_analyzer import SceneAnalyzerAgent
+        from app.services.agents.explants.scene_analyzer import SceneAnalyzerAgent
 
         self.native_agents["scene-analyzer"] = {
             "agent_class": SceneAnalyzerAgent,

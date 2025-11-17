@@ -16,8 +16,8 @@ from anthropic import Anthropic
 import json
 import logging
 
-from factory.core.dual_voice_profiles import StarterVoiceProfile
-from factory.core.skill_generator import GeneratedSkill
+from app.core.dual_voice_profiles import StarterVoiceProfile
+from app.core.skill_generator import GeneratedSkill
 
 logger = logging.getLogger(__name__)
 

@@ -10,13 +10,13 @@ from datetime import datetime
 from anthropic import Anthropic
 import logging
 
-from factory.core.dual_voice_profiles import (
+from app.core.dual_voice_profiles import (
     StarterVoiceProfile,
     NovelVoiceProfile,
     compare_voices
 )
-from factory.core.voice_extractor import VoiceProfileExtractor
-from factory.core.skill_generator import SkillGenerator
+from app.core.voice_extractor import VoiceProfileExtractor
+from app.core.skill_generator import SkillGenerator
 
 logger = logging.getLogger(__name__)
 
