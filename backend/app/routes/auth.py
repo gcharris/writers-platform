@@ -63,7 +63,7 @@ async def login(
 
     return {"access_token": access_token, "token_type": "bearer"}
 
-@router.post("/login/json", response_model=Token)
+@router.post("/login/json")
 async def login_json(
     credentials: LoginRequest,
     db: Session = Depends(get_db)
@@ -83,7 +83,28 @@ async def login_json(
 
     access_token = create_access_token(data={"sub": str(user.id)})
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": UserResponse(
+            id=str(user.id),
+            username=user.username,
+            email=user.email,
+            created_at=user.created_at.isoformat()
+        )
+    }
+
+@router.get("/me", response_model=UserResponse)
+async def get_me(
+    current_user: User = Depends(get_current_user)
+):
+    """Get current authenticated user."""
+    return UserResponse(
+        id=str(current_user.id),
+        username=current_user.username,
+        email=current_user.email,
+        created_at=current_user.created_at.isoformat()
+    )
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
