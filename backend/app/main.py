@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import Base, engine
-from app.routes import auth, works, reading, comments, ratings, browse, profile, engagement, notifications, dashboard, reading_lists, professional, factory, events, projects, analysis
+from app.routes import auth, works, reading, comments, ratings, browse, profile, engagement, notifications, dashboard, reading_lists, professional, factory, events, projects, analysis, workflows
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -56,6 +56,7 @@ app.include_router(events.router, prefix=settings.API_PREFIX)
 # Factory integration
 app.include_router(projects.router, prefix=settings.API_PREFIX)
 app.include_router(analysis.router, prefix=settings.API_PREFIX)
+app.include_router(workflows.router, prefix=settings.API_PREFIX)
 
 @app.get("/")
 async def root():
