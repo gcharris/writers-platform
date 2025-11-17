@@ -1,0 +1,145 @@
+# Writers Factory Core - System Settings
+
+# ============================================================================
+# GENERAL SETTINGS
+# ============================================================================
+
+system:
+  name: "Writers Factory Core"
+  version: "0.1.0"
+  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  log_file: ".factory/logs/factory.log"
+  log_format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# ============================================================================
+# GENERATION DEFAULTS
+# ============================================================================
+
+generation:
+  default_temperature: 0.8
+  default_max_tokens: 2000
+  default_top_p: 0.95
+  default_timeout: 120  # seconds
+  retry_attempts: 3
+  retry_delay: 2.0  # seconds
+  enable_streaming: false
+
+# ============================================================================
+# AGENT POOL SETTINGS
+# ============================================================================
+
+agent_pool:
+  max_parallel_requests: 10
+  request_timeout: 120  # seconds
+  enable_caching: true
+  cache_ttl: 3600  # seconds
+  log_all_requests: true
+  log_request_details: true
+
+# ============================================================================
+# WORKFLOW ENGINE SETTINGS
+# ============================================================================
+
+workflow:
+  enable_parallel_execution: true
+  step_timeout: 300  # seconds
+  enable_state_persistence: true
+  state_file: ".factory/state/workflow_state.json"
+  enable_rollback: false
+
+# ============================================================================
+# KNOWLEDGE BASE SETTINGS
+# ============================================================================
+
+knowledge:
+  # Cognee (local semantic graph)
+  cognee:
+    enabled: true
+    database_path: ".factory/knowledge/cognee"
+
+  # Gemini File Search (cloud semantic search)
+  gemini_file_search:
+    enabled: true
+    project_id: "YOUR_PROJECT_ID"
+
+  # NotebookLM (external queries)
+  notebooklm:
+    enabled: true
+
+  # Router settings
+  router:
+    prefer_local: true  # Prefer Cognee over cloud when available
+    enable_caching: true
+    cache_ttl: 3600  # seconds
+    fallback_chain:
+      - cognee
+      - gemini_file_search
+      - notebooklm
+
+# ============================================================================
+# STORAGE SETTINGS
+# ============================================================================
+
+storage:
+  database_path: ".factory/analytics.db"
+  enable_analytics: true
+  enable_session_logging: true
+  enable_cost_tracking: true
+  session_retention_days: 90
+  auto_cleanup: true
+
+# ============================================================================
+# CLI SETTINGS
+# ============================================================================
+
+cli:
+  theme: "monokai"  # rich theme name
+  show_timestamps: true
+  show_progress_bars: true
+  enable_colors: true
+  verbose_errors: false
+  confirm_destructive_actions: true
+
+# ============================================================================
+# API CREDENTIALS
+# ============================================================================
+
+credentials:
+  file: "config/credentials.json"
+  encrypt: false  # Not implemented yet
+
+# ============================================================================
+# TOURNAMENT SETTINGS
+# ============================================================================
+
+tournament:
+  default_agents:
+    - claude-sonnet-4.5
+    - gpt-4o
+    - gemini-2-flash
+  max_concurrent_agents: 10
+  enable_scoring: true
+  enable_comparison: true
+  save_all_results: true
+
+# ============================================================================
+# FEATURE FLAGS
+# ============================================================================
+
+features:
+  enable_web_ui: false  # Not implemented yet
+  enable_batch_processing: true
+  enable_cost_alerts: true
+  cost_alert_threshold: 10.0  # USD
+  enable_quality_scoring: true
+  enable_auto_hybridization: false  # Not implemented yet
+
+# ============================================================================
+# DEVELOPMENT SETTINGS
+# ============================================================================
+
+development:
+  debug_mode: false
+  mock_api_calls: false  # Use mock responses instead of real API calls
+  save_debug_info: false
+  verbose_logging: false
