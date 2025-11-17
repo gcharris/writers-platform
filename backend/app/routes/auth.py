@@ -3,6 +3,8 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 
+from pydantic import BaseModel
+
 from app.core.database import get_db
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.core.config import settings
@@ -10,6 +12,11 @@ from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, Token
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+# JSON Login schema
+class LoginRequest(BaseModel):
+    username: str  # Can be email or username
+    password: str
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
@@ -42,11 +49,33 @@ async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-    """Login and get access token."""
+    """Login and get access token (OAuth2 form format)."""
 
     user = db.query(User).filter(User.email == form_data.username).first()
 
     if not user or not verify_password(form_data.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password"
+        )
+
+    access_token = create_access_token(data={"sub": str(user.id)})
+
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@router.post("/login/json", response_model=Token)
+async def login_json(
+    credentials: LoginRequest,
+    db: Session = Depends(get_db)
+):
+    """Login and get access token (JSON format for frontend)."""
+
+    # Try to find user by email or username
+    user = db.query(User).filter(
+        (User.email == credentials.username) | (User.username == credentials.username)
+    ).first()
+
+    if not user or not verify_password(credentials.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"
