@@ -1,0 +1,82 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv
+venv/
+ENV/
+backend/.venv
+backend/venv/
+
+# Environment variables
+.env
+.env.local
+backend/.env
+backend/.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Railway
+.railway/
+
+# Credentials (IMPORTANT!)
+backend/app/core/config/credentials.json
+backend/engine/config/credentials.json
+**/credentials.json
+**/service-account*.json
+
+# Large files from Factory engine
+backend/engine/knowledge/
+backend/engine/.cognee/
+
+# Node modules (for future frontends)
+node_modules/
+.next/
+out/
+build/

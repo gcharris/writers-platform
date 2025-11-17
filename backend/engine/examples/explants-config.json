@@ -1,0 +1,62 @@
+{
+  "project_name": "The-Explants",
+  "description": "Science fiction novel trilogy exploring consciousness, AI, and human identity",
+  "bucket_name": "explants-story-store",
+  "genre": "science-fiction",
+  "target_length": "300000 words (trilogy)",
+
+  "narrative_voice": {
+    "style": "Enhanced Mickey Bardot voice",
+    "characteristics": [
+      "Compressed phrasing",
+      "Direct metaphors",
+      "Embedded personality",
+      "Present-tense urgency"
+    ],
+    "pov": "First person (Mickey) with occasional third-person omniscient"
+  },
+
+  "key_characters": [
+    "Mickey Bardot (Enhanced)",
+    "AI Overseer",
+    "Supporting cast as defined in characters/ folder"
+  ],
+
+  "worldbuilding_themes": [
+    "Neural implants",
+    "Corporate control",
+    "Consciousness war",
+    "Human-AI integration",
+    "Dystopian future"
+  ],
+
+  "context_query_defaults": {
+    "include_recent_chapters": 3,
+    "include_motifs": true,
+    "character_auto_query": true,
+    "worldbuilding_auto_query": true
+  },
+
+  "agent_preferences": {
+    "scene_writing": ["claude", "gemini"],
+    "critique": ["claude"],
+    "dialogue": ["claude", "chatgpt"]
+  },
+
+  "quality_criteria": [
+    "Enhanced Mickey voice authenticity",
+    "Character consistency",
+    "Worldbuilding integration",
+    "Pacing",
+    "Dialogue naturalness",
+    "Emotional impact",
+    "Consciousness war argument progression"
+  ],
+
+  "integration_notes": [
+    "Existing Claude Code skills in /The-Explants/.claude/skills/ should continue to work",
+    "Use framework for multi-agent scene generation and critique",
+    "Sync completed chapters to Google File Store for context",
+    "Use NotebookLM as queryable knowledge base alongside Google File Store"
+  ]
+}

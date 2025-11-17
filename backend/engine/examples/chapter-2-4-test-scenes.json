@@ -1,0 +1,35 @@
+{
+  "chapter": "2.4",
+  "description": "Example scene batch for testing the tournament system",
+  "scenes": [
+    {
+      "scene_id": "2.4.1-test",
+      "title": "The Seduction Deepens",
+      "outline": "Vance makes his offer explicit. Mickey's resistance weakens as optimization mathematics seduce him with their elegance. Show the internal conflict through bi-location strain symptoms.",
+      "context_requirements": [
+        "Mickey Bardot",
+        "Vance",
+        "consciousness war",
+        "bi-location strain",
+        "optimization mathematics"
+      ],
+      "previous_scenes": ["2.3.5"],
+      "custom_instructions": "Focus on Mickey's physical strain symptoms (temples pulsing, shadow splitting). Use The Line terminology if referencing Noni's distant awareness. Show seduction through Mickey's con-artist perspective on Vance's mathematical elegance."
+    },
+    {
+      "scene_id": "2.4.2-test",
+      "title": "Noni's Warning",
+      "outline": "Through The Line, Noni detects corruption patterns in Mickey's consciousness. Her morphic resonance maps the ideological rot crystallizing in his thinking. She reaches out with a warning.",
+      "context_requirements": [
+        "Mickey Bardot",
+        "Noni",
+        "The Line",
+        "The Tether",
+        "morphic resonance",
+        "consciousness war"
+      ],
+      "previous_scenes": ["2.4.1-test"],
+      "custom_instructions": "Show Noni as ACTIVE interpreter, not passive receiver. Her morphic resonance reads patterns. Use The Line/Tether/Shared Vein terminology. Avoid 'quantum link' jargon."
+    }
+  ]
+}

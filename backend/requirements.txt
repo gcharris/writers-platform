@@ -1,0 +1,59 @@
+# Writers Platform - Unified Backend Dependencies
+
+# ============================================
+# Web Framework & API (from Community)
+# ============================================
+fastapi==0.115.0
+uvicorn[standard]==0.32.1
+python-multipart==0.0.17
+
+# ============================================
+# Database & ORM (from Community)
+# ============================================
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10
+alembic==1.14.0
+
+# ============================================
+# Authentication & Security (from Community)
+# ============================================
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+
+# ============================================
+# Data Validation (from Community)
+# ============================================
+pydantic[email]==2.10.3
+pydantic-settings==2.6.1
+
+# ============================================
+# AI Platform SDKs (from Factory)
+# ============================================
+anthropic>=0.18.0
+openai>=1.12.0
+google-generativeai>=0.3.0
+
+# ============================================
+# Google Cloud Storage (from Factory)
+# ============================================
+google-cloud-storage>=2.10.0
+google-auth>=2.23.0
+
+# ============================================
+# Utilities (from Factory)
+# ============================================
+python-dotenv>=1.0.0
+
+# ============================================
+# File Processing (NEW - for Claude Cloud to add specifics)
+# ============================================
+# python-docx  # DOCX file parsing
+# PyPDF2       # PDF file parsing
+# TODO: Claude Cloud Agent - add file processing libraries
+
+# ============================================
+# AI Detection (NEW - for badge engine)
+# ============================================
+# TODO: Claude Cloud Agent - add AI content detection library
+# Options: gptzero-api, openai-detector, custom implementation

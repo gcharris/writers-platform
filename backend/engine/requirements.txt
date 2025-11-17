@@ -1,0 +1,13 @@
+# Creative Writing Agent Framework Dependencies
+
+# Google Cloud Storage
+google-cloud-storage>=2.10.0
+google-auth>=2.23.0
+
+# AI Platform SDKs
+anthropic>=0.18.0
+openai>=1.12.0
+google-generativeai>=0.3.0
+
+# Utilities
+python-dotenv>=1.0.0

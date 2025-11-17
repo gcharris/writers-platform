@@ -1,0 +1,33 @@
+# Cognee Knowledge Graph Requirements
+# Install with: pip install -r requirements.txt
+
+# Core Cognee
+cognee>=0.1.26
+
+# Optional: Database Support
+# Uncomment based on your needs:
+
+# Neo4j graph database
+# neo4j>=5.0.0
+
+# PostgreSQL support
+# psycopg2-binary>=2.9.0
+# pgvector>=0.2.0
+
+# ChromaDB vector store
+# chromadb>=0.4.0
+
+# Qdrant vector store
+# qdrant-client>=1.7.0
+
+# Weaviate vector store
+# weaviate-client>=3.0.0
+
+# Additional dependencies for analysis
+networkx>=3.0  # For graph visualization and analysis
+matplotlib>=3.7.0  # For graph visualization
+
+# Already in main requirements.txt, but listed here for reference:
+# google-generativeai  # For Gemini LLM
+# anthropic  # For Claude LLM
+# openai  # For OpenAI LLM
