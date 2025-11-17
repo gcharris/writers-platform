@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import Base, engine
-from app.routes import auth, works, reading, comments, ratings, browse, profile, engagement, notifications, dashboard, reading_lists, professional, factory, events
+from app.routes import auth, works, reading, comments, ratings, browse, profile, engagement, notifications, dashboard, reading_lists, professional, factory, events, projects, analysis
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -20,9 +20,14 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
+        "http://localhost:3000",
         "https://writerscommunity.app",
         "https://www.writerscommunity.app",
-        "https://feisty-passion-production-a7f1.up.railway.app"
+        "https://writersfactory.app",
+        "https://www.writersfactory.app",
+        "https://feisty-passion-production-a7f1.up.railway.app",
+        # Vercel preview deployments
+        "https://*.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -47,6 +52,9 @@ app.include_router(reading_lists.router, prefix=settings.API_PREFIX)
 app.include_router(professional.router, prefix=settings.API_PREFIX)
 app.include_router(factory.router, prefix=settings.API_PREFIX)
 app.include_router(events.router, prefix=settings.API_PREFIX)
+# Factory integration
+app.include_router(projects.router, prefix=settings.API_PREFIX)
+app.include_router(analysis.router, prefix=settings.API_PREFIX)
 
 @app.get("/")
 async def root():

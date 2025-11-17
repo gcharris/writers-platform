@@ -46,14 +46,20 @@ google-auth>=2.23.0
 python-dotenv>=1.0.0
 
 # ============================================
-# File Processing (NEW - for Claude Cloud to add specifics)
+# File Processing
 # ============================================
-# python-docx  # DOCX file parsing
-# PyPDF2       # PDF file parsing
-# TODO: Claude Cloud Agent - add file processing libraries
+python-docx>=1.1.0  # DOCX file parsing
+PyPDF2>=3.0.0       # PDF file parsing
+charset-normalizer>=3.0.0  # Text encoding detection
 
 # ============================================
-# AI Detection (NEW - for badge engine)
+# Background Jobs (for async AI processing)
 # ============================================
-# TODO: Claude Cloud Agent - add AI content detection library
-# Options: gptzero-api, openai-detector, custom implementation
+# Using FastAPI BackgroundTasks (built-in, no extra deps needed for MVP)
+# For production: celery[redis]>=5.3.0
+
+# ============================================
+# AI Detection (for badge engine)
+# ============================================
+# Using existing AI SDKs for detection (anthropic, openai)
+# Custom implementation using Claude/GPT for content analysis
