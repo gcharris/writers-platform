@@ -30,8 +30,17 @@ import traceback
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from gemini_file_search import ExplantsKnowledgeGraph, GeminiFileSearchConfig
-from google_store import GoogleStoreConfig, GoogleStoreQuerier  # Keep for backward compatibility
+# Gemini File Search (optional for web deployment)
+try:
+    from gemini_file_search import ExplantsKnowledgeGraph, GeminiFileSearchConfig
+    from google_store import GoogleStoreConfig, GoogleStoreQuerier
+    GEMINI_FILE_SEARCH_AVAILABLE = True
+except ImportError:
+    GEMINI_FILE_SEARCH_AVAILABLE = False
+    ExplantsKnowledgeGraph = None
+    GeminiFileSearchConfig = None
+    GoogleStoreConfig = None
+    GoogleStoreQuerier = None
 
 # Cognee Knowledge Graph (alternative to Gemini File Search)
 try:
@@ -87,7 +96,7 @@ class TournamentOrchestrator:
     }
 
     def __init__(self, project_name: str = "The-Explants",
-                 config: Optional[GoogleStoreConfig] = None,
+                 config = None,
                  synthesis_threshold: float = 7.0,
                  use_gemini_search: bool = True,
                  use_cognee: bool = False):
@@ -96,7 +105,7 @@ class TournamentOrchestrator:
 
         Args:
             project_name: Writing project name
-            config: GoogleStoreConfig instance (for backward compatibility)
+            config: GoogleStoreConfig instance (for backward compatibility, optional)
             synthesis_threshold: Minimum score for inclusion in hybrid (default 7.0)
             use_gemini_search: Use Gemini File Search (cloud-based semantic search)
             use_cognee: Use Cognee Knowledge Graph (self-hosted, true graph with entities/relationships)
@@ -123,7 +132,7 @@ class TournamentOrchestrator:
                 use_cognee = False
 
         # Try to initialize Gemini File Search if not using Cognee
-        if not use_cognee and use_gemini_search:
+        if not use_cognee and use_gemini_search and GEMINI_FILE_SEARCH_AVAILABLE:
             try:
                 gemini_config = GeminiFileSearchConfig()
                 self.knowledge_graph = ExplantsKnowledgeGraph(config=gemini_config)
@@ -135,7 +144,7 @@ class TournamentOrchestrator:
                 use_gemini_search = False
 
         # Fallback to legacy Google Cloud Storage
-        if not use_cognee and (not use_gemini_search or self.knowledge_graph is None):
+        if not use_cognee and (not use_gemini_search or self.knowledge_graph is None) and GEMINI_FILE_SEARCH_AVAILABLE:
             try:
                 self.querier = GoogleStoreQuerier(project_name, self.config)
                 self.kg_type = "gcs"
@@ -144,6 +153,10 @@ class TournamentOrchestrator:
                 print(f"Warning: Google Cloud Storage not available: {e}")
                 print("Continuing with minimal context...")
                 self.kg_type = "minimal"
+        else:
+            # No knowledge graph available
+            self.kg_type = "minimal"
+            print("Note: Knowledge graph systems not available - using minimal context")
 
         # Initialize agents cache
         self.agents_cache = {}
@@ -152,8 +165,11 @@ class TournamentOrchestrator:
         self.total_cost = 0.0
         self.total_tokens = 0
 
-    def _load_config(self) -> GoogleStoreConfig:
+    def _load_config(self):
         """Load configuration from credentials.json or environment."""
+        if not GEMINI_FILE_SEARCH_AVAILABLE:
+            return None
+
         config = GoogleStoreConfig()
 
         if not config.config:
