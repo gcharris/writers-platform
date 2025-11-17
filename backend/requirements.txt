@@ -1,0 +1,80 @@
+# Writers Platform - Unified Backend Dependencies
+# Optimized for Railway deployment
+
+# ============================================
+# Web Framework & API (from Community)
+# ============================================
+fastapi>=0.115.7
+uvicorn[standard]==0.32.1
+python-multipart==0.0.17
+
+# ============================================
+# Database & ORM (from Community)
+# ============================================
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10
+alembic==1.14.0
+
+# ============================================
+# Authentication & Security (from Community)
+# ============================================
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+
+# ============================================
+# Data Validation (from Community)
+# ============================================
+pydantic[email]==2.10.3
+pydantic-settings==2.6.1
+
+# ============================================
+# AI Platform SDKs (from Factory)
+# ============================================
+anthropic>=0.18.0
+openai>=1.12.0
+google-generativeai>=0.3.0
+
+# ============================================
+# Google Cloud Storage (from Factory)
+# ============================================
+google-cloud-storage>=2.10.0
+google-auth>=2.23.0
+
+# ============================================
+# Utilities (from Factory)
+# ============================================
+python-dotenv>=1.0.0
+
+# ============================================
+# Graph Analysis (lightweight alternative to cognee)
+# ============================================
+networkx>=3.0  # For graph analysis
+
+# ============================================
+# File Processing
+# ============================================
+python-docx>=1.1.0  # DOCX file parsing
+PyPDF2>=3.0.0       # PDF file parsing
+charset-normalizer>=3.0.0  # Text encoding detection
+
+# ============================================
+# Background Jobs (for async AI processing)
+# ============================================
+# Using FastAPI BackgroundTasks (built-in, no extra deps needed for MVP)
+# For production: celery[redis]>=5.3.0
+
+# ============================================
+# AI Detection (for badge engine)
+# ============================================
+# Using existing AI SDKs for detection (anthropic, openai)
+# Custom implementation using Claude/GPT for content analysis
+
+# ============================================
+# REMOVED FOR DEPLOYMENT OPTIMIZATION:
+# ============================================
+# cognee>=0.1.26  # REMOVED: Not actively used (use_cognee=False)
+#   - This single package was pulling in 50+ dependencies:
+#   - onnxruntime (500MB+), fastembed, lancedb, kuzu, litellm, etc.
+#   - Causing Railway deployment timeouts
+#   - Can be re-added later when knowledge graph features are needed

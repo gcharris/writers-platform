@@ -1,0 +1,75 @@
+{
+  "test_name": "Enhanced Mickey Voice Consistency Test",
+  "description": "Test whether different AI models can maintain Enhanced Mickey Bardot's voice",
+  "reference_files_dir": "Gemini Micky/",
+  "models": ["claude-sonnet-4-5", "gemini-2.0-flash", "gpt-4o", "grok-2"],
+  "scenes": [
+    {
+      "scene_id": "TEST-2.1.X",
+      "title": "Ken's Leverage",
+      "phase": 2,
+      "outline": "Mickey meets with Ken in Area 52 basement. Ken shows him satellite imagery of Vance's territory and explains the surveillance mission. Mickey recognizes the leverage Ken is applying through the dojo photos—subtle manipulation using geographic distance (Vegas 160 miles away) and Mickey's attachments. Ken assigns the mission with calculated pressure.",
+      "characters": ["Mickey Bardot", "Ken"],
+      "worldbuilding": ["Area 52", "bi-location", "Q5 chip", "surveillance"],
+      "key_beats": [
+        "Ken's calculated manipulation through dojo photos",
+        "Mickey reading the setup—leverage through geography",
+        "Geographic leverage: Vegas 160 miles away, attachments used as pressure",
+        "Mission assignment accepted under duress"
+      ],
+      "expected_metaphors": {
+        "addiction": 30,
+        "casino": 20,
+        "martial_arts": 15,
+        "architecture": 20,
+        "other": 15
+      },
+      "word_target": 600
+    },
+    {
+      "scene_id": "TEST-2.2.X",
+      "title": "First Conversation at Area 52",
+      "phase": 2,
+      "outline": "Mickey and Noni's first conversation after arriving at Area 52. Tension over their captivity, mutual suspicion about motives, but underlying connection through The Line. They circle each other verbally, neither admitting dependence. Power dynamics shift as Mickey tries to maintain distance while The Line pulls them together. Noni reads his patterns; he resents and craves it.",
+      "characters": ["Mickey Bardot", "Noni"],
+      "worldbuilding": ["The Line", "Area 52 constraints", "morphic resonance", "captivity dynamics"],
+      "key_beats": [
+        "Verbal sparring masking deeper connection",
+        "The Line pulling between them—undeniable but unacknowledged",
+        "Power dynamics shifting: who controls, who needs",
+        "Neither admits vulnerability despite obvious dependence"
+      ],
+      "expected_metaphors": {
+        "addiction": 35,
+        "casino": 20,
+        "martial_arts": 20,
+        "music": 15,
+        "other": 10
+      },
+      "word_target": 650
+    },
+    {
+      "scene_id": "TEST-2.3.X",
+      "title": "First Bi-location into Vance's Territory",
+      "phase": 3,
+      "outline": "Mickey bi-locates into Vance's territory for reconnaissance. He experiences the optimized environment's sterile efficiency—every inefficiency eliminated, suffering reduced to zero through mathematical precision. Maintains connection to analog body at Area 52 while navigating the quantum space. Noni provides interpretive support through morphic resonance from distance. Mickey observes Vance's citizens: optimized, content, but something missing. The contrast between authentic chaos and sterile efficiency.",
+      "characters": ["Mickey Bardot", "Noni (indirect)", "Vance's citizens"],
+      "worldbuilding": ["Bi-location mechanics", "The Line", "morphic resonance", "Vance's territory", "optimization philosophy"],
+      "key_beats": [
+        "Bi-location strain markers: temples pulsing, shadow splitting",
+        "Optimized territory vs. authentic chaos contrast",
+        "Noni's pattern reading from distance—morphic resonance guidance",
+        "Mickey's quantum consciousness observing analog Mickey simultaneously",
+        "Vance's citizens: optimized but hollowed"
+      ],
+      "expected_metaphors": {
+        "addiction": 25,
+        "martial_arts": 25,
+        "architecture": 25,
+        "casino": 15,
+        "other": 10
+      },
+      "word_target": 700
+    }
+  ]
+}
