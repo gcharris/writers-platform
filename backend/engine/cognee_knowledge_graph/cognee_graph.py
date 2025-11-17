@@ -22,7 +22,7 @@ except ImportError:
     COGNEE_AVAILABLE = False
     SearchType = None
 
-from factory.core.cognee_knowledge_graph.config import CogneeConfig
+from .config import CogneeConfig
 
 
 # Set up logging

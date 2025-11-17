@@ -12,7 +12,7 @@ import logging
 from typing import Dict, List, Optional, Any, Set
 from dataclasses import dataclass
 
-from factory.core.cognee_knowledge_graph.cognee_graph import CogneeKnowledgeGraph, QueryResult
+from .cognee_graph import CogneeKnowledgeGraph, QueryResult
 
 
 logging.basicConfig(level=logging.INFO)
@@ -525,7 +525,7 @@ class EntityQuerier:
 if __name__ == "__main__":
     # Test entity queries
     import asyncio
-    from factory.core.cognee_knowledge_graph.cognee_graph import CogneeKnowledgeGraph
+    from .cognee_graph import CogneeKnowledgeGraph
 
     async def test():
         kg = CogneeKnowledgeGraph()

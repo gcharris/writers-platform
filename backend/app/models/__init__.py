@@ -9,7 +9,7 @@ from app.models.reading_session import ReadingSession
 from app.models.reading_history import ReadingHistory
 from app.models.reading_list import ReadingList
 from app.models.notification import Notification
-from app.models.professional import ProfessionalProfile, ProfessionalSubmission, TalentScout
+from app.models.professional import ProfessionalProfile, Submission
 from app.models.talent_event import TalentEvent
 from app.models.report import Report
 
@@ -32,8 +32,7 @@ __all__ = [
     "ReadingList",
     "Notification",
     "ProfessionalProfile",
-    "ProfessionalSubmission",
-    "TalentScout",
+    "Submission",
     "TalentEvent",
     "Report",
     # Factory models

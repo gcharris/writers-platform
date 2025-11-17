@@ -10,8 +10,18 @@ interface AuthState {
   setUser: (user: User) => void;
 }
 
+const getUserFromStorage = (): User | null => {
+  try {
+    const userStr = localStorage.getItem('user');
+    if (!userStr || userStr === 'undefined') return null;
+    return JSON.parse(userStr);
+  } catch {
+    return null;
+  }
+};
+
 export const useAuthStore = create<AuthState>((set) => ({
-  user: JSON.parse(localStorage.getItem('user') || 'null'),
+  user: getUserFromStorage(),
   token: localStorage.getItem('auth_token'),
   isAuthenticated: !!localStorage.getItem('auth_token'),
 

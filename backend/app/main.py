@@ -26,8 +26,9 @@ app.add_middleware(
         "https://writersfactory.app",
         "https://www.writersfactory.app",
         "https://feisty-passion-production-a7f1.up.railway.app",
-        # Vercel preview deployments
-        "https://*.vercel.app"
+        # Vercel deployments (specific domains - wildcards don't work with CORS)
+        "https://writers-platform.vercel.app",
+        "https://writers-platform-git-main-writers-app-development.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],

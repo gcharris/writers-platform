@@ -27,10 +27,10 @@ Example Usage:
     >>> results = await kg.query("Show Mickey's addiction arc")
 """
 
-from factory.core.cognee_knowledge_graph.config import CogneeConfig
-from factory.core.cognee_knowledge_graph.cognee_graph import CogneeKnowledgeGraph
-from factory.core.cognee_knowledge_graph.bulk_uploader import BulkUploader
-from factory.core.cognee_knowledge_graph.entity_queries import EntityQuerier
+from .config import CogneeConfig
+from .cognee_graph import CogneeKnowledgeGraph
+from .bulk_uploader import BulkUploader
+from .entity_queries import EntityQuerier
 
 __all__ = [
     'CogneeConfig',
