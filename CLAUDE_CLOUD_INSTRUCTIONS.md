@@ -47,7 +47,10 @@ All code has been migrated here by Cursor AI. You'll find:
 3. **backend/app/services/orchestrator.py**
    - Import from: backend.engine.orchestration.tournament
    - Wrap tournament.py for async web use
-   - Create job queue for long-running analyses
+   - **CRITICAL:** Create background job system for long-running AI analyses
+   - **Options:** Use FastAPI BackgroundTasks (simple), or Celery + Redis (production)
+   - **Why:** AI tournaments can take 5-10 minutes, can't block HTTP requests
+   - **Must return:** Job ID immediately, allow polling for status/results
 
 4. **backend/app/services/badge_engine.py**
    - detect_ai_authorship(text) -> confidence score
@@ -58,6 +61,8 @@ All code has been migrated here by Cursor AI. You'll find:
    - parse_docx(file) -> chapters/scenes
    - parse_pdf(file) -> chapters/scenes
    - parse_txt(file) -> chapters/scenes
+   - **File Storage:** Use Railway volumes or integrate S3-compatible storage
+   - **Not local filesystem** - must work in cloud environment
 
 ### PRIORITY 2: Database Models
 
@@ -101,10 +106,32 @@ All code has been migrated here by Cursor AI. You'll find:
 
 ### PRIORITY 4: Deploy Backend
 
-- Railway deployment config
-- Environment variables
-- Database migration
-- Test all endpoints
+**CRITICAL: Cloud-First Architecture**
+
+This is NOT a local CLI tool. This is a web-based SaaS product.
+
+**Requirements:**
+- ✅ Deploy to Railway (cloud hosting)
+- ✅ PostgreSQL database (Railway addon)
+- ✅ File storage (Railway volumes or S3)
+- ✅ Background jobs (FastAPI BackgroundTasks minimum, Celery preferred)
+- ✅ Environment variables (all secrets in Railway config, not in code)
+- ✅ HTTPS endpoints (accessible from anywhere)
+- ✅ CORS for writersfactory.app and writerscommunity.app
+
+**NOT acceptable:**
+- ❌ Local file system paths
+- ❌ Blocking HTTP requests for long AI processing
+- ❌ Hardcoded API keys in code
+- ❌ "Run locally" as primary deployment
+
+**Deployment Steps:**
+1. Create Railway project
+2. Add PostgreSQL addon
+3. Configure environment variables (API keys, JWT secret, etc.)
+4. Deploy backend
+5. Run database migrations
+6. Test all endpoints via HTTPS
 
 ## Important Notes
 
