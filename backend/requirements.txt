@@ -46,6 +46,12 @@ google-auth>=2.23.0
 python-dotenv>=1.0.0
 
 # ============================================
+# Knowledge Graph (Cognee)
+# ============================================
+cognee>=0.1.26
+networkx>=3.0  # For graph analysis
+
+# ============================================
 # File Processing
 # ============================================
 python-docx>=1.1.0  # DOCX file parsing

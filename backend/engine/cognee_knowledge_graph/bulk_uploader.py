@@ -22,8 +22,8 @@ try:
 except ImportError:
     COGNEE_AVAILABLE = False
 
-from factory.core.cognee_knowledge_graph.config import CogneeConfig
-from factory.core.cognee_knowledge_graph.cognee_graph import CogneeKnowledgeGraph
+from .config import CogneeConfig
+from .cognee_graph import CogneeKnowledgeGraph
 
 
 logging.basicConfig(level=logging.INFO)
