@@ -18,6 +18,7 @@ from app.models.project import Project
 from app.models.scene import Scene
 from app.models.analysis_result import AnalysisResult
 from app.models.badge import Badge
+from app.models.manuscript import ManuscriptAct, ManuscriptChapter, ManuscriptScene, ReferenceFile
 
 __all__ = [
     "User",
@@ -40,4 +41,9 @@ __all__ = [
     "Scene",
     "AnalysisResult",
     "Badge",
+    # Manuscript models (factory-core integration)
+    "ManuscriptAct",
+    "ManuscriptChapter",
+    "ManuscriptScene",
+    "ReferenceFile",
 ]
