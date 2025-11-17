@@ -2,29 +2,17 @@
 
 ## IMPORTANT: Repository to Use
 
-**Work in this repository ONLY:**
-```
-/Users/gch2024/Documents/Documents - Mac Mini/writers-platform/
-```
-
-**DO NOT modify these repositories:**
-- ❌ `/Users/gch2024/Documents/Documents - Mac Mini/writers-community/` (original, keep as reference)
-- ❌ `/Users/gch2024/Documents/Documents - Mac Mini/Explant drafts current/factory/` (original, keep as reference)
-
-**All your work goes in:** `writers-platform/`
-
 **GitHub Repository:**
 ```
 https://github.com/gcharris/writers-platform
 ```
 
-When ready to push, use:
-```bash
-cd /Users/gch2024/Documents/Documents\ -\ Mac\ Mini/writers-platform/
-git add .
-git commit -m "Session 1: Backend implementation complete"
-git push origin main
-```
+**This is the ONLY repository you need to work with.**
+
+All code has been migrated here by Cursor AI. You'll find:
+- Community backend in `backend/`
+- Factory engine in `backend/engine/`
+- Placeholder files for new features
 
 ## Repository Status
 

@@ -28,12 +28,7 @@ I have a new repository `writers-platform` that contains:
 - ✅ Factory AI engine (70k lines, already working)
 - 📝 Placeholder files for NEW features (you need to implement these)
 
-**Repository Path:**
-```
-/Users/gch2024/Documents/Documents - Mac Mini/writers-platform/
-```
-
-**GitHub:**
+**GitHub Repository:**
 ```
 https://github.com/gcharris/writers-platform
 ```
@@ -102,19 +97,11 @@ Build the Writers Factory web interface by implementing 5 new files and updating
 
 **DO NOT modify:**
 - `backend/engine/` (Factory's AI code - use as-is via imports)
-- Original repos: `writers-community/` or `factory/` (they're reference only)
 
 **DO use:**
 - Existing Community models where possible
 - Import Factory's tournament code: `from backend.engine.orchestration import tournament`
 
 ---
-
-## Start Command
-
-```bash
-cd /Users/gch2024/Documents/Documents\ -\ Mac\ Mini/writers-platform/
-# Read the docs, then start implementing!
-```
 
 **When done, notify user for Session 2: Factory Frontend**
