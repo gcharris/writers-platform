@@ -14,10 +14,13 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 import uuid
 
-# Add backend/engine to path so we can import tournament
+# Add engine to path so we can import tournament
+# In Railway deployment: __file__ is /app/app/services/orchestrator.py
+# parent.parent.parent is /app
+# So this adds /app/engine to sys.path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "engine"))
 
-from backend.engine.orchestration.tournament import TournamentOrchestrator
+from orchestration.tournament import TournamentOrchestrator
 
 from app.models.project import Project
 from app.models.scene import Scene
