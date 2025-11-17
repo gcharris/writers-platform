@@ -295,21 +295,79 @@ railway variables | grep API_KEY
 railway run python -c "from backend.engine.agents import ClaudeAgent; print('Claude OK')"
 ```
 
-## Next Steps (Session 2)
+## Factory Frontend Deployment (Vercel)
 
-After backend is deployed and tested:
+### Step 1: Connect Repository
 
-1. **Deploy Factory Frontend** (Vercel)
-   - Connect to this backend API
-   - Set `VITE_API_URL=https://your-backend.up.railway.app`
+1. Go to https://vercel.com and sign in
+2. Click "New Project"
+3. Import `writers-platform` repository
+4. Set **Root Directory** to `factory-frontend`
 
-2. **Deploy Community Frontend** (Vercel)
-   - Already deployed, just verify connection
+### Step 2: Configure Build Settings
 
-3. **Custom Domains**
-   - Backend: api.writersfactory.app (Railway)
-   - Factory: writersfactory.app (Vercel)
-   - Community: writerscommunity.app (Vercel)
+Vercel should auto-detect Vite configuration. If not, set:
+
+```
+Build Command: npm run build
+Output Directory: dist
+Install Command: npm install
+Development Command: npm run dev
+```
+
+### Step 3: Set Environment Variables
+
+In Vercel project settings, add:
+
+```
+VITE_API_URL=https://writers-platform-production.up.railway.app/api
+```
+
+Replace with your actual Railway backend URL.
+
+### Step 4: Deploy
+
+1. Click "Deploy"
+2. Wait for deployment to complete
+3. Test the deployed site at the Vercel URL
+
+### Step 5: Update Backend CORS
+
+Add Vercel deployment URL to backend CORS allowed origins:
+
+```python
+# In backend/app/main.py
+origins = [
+    "http://localhost:5173",  # Local dev
+    "https://writersfactory.app",  # Production domain
+    "https://your-project.vercel.app",  # Vercel deployment
+    "https://*.vercel.app",  # All Vercel preview deployments
+]
+```
+
+Then redeploy backend to Railway.
+
+### Step 6: Configure Custom Domain (Optional)
+
+1. Go to Vercel project settings → Domains
+2. Add `writersfactory.app`
+3. Configure DNS records as instructed by Vercel
+4. Update backend CORS if needed
+
+## Testing End-to-End
+
+1. **Register new account** on Factory frontend
+2. **Create project** or upload file
+3. **View/edit scenes** in Editor
+4. **Trigger AI analysis** with scene outline
+5. **Monitor progress** and view results
+6. **Verify costs** are tracked in database
+
+## Custom Domains Summary
+
+- **Backend API**: api.writersfactory.app (Railway)
+- **Factory Frontend**: writersfactory.app (Vercel)
+- **Community Frontend**: writerscommunity.app (Vercel)
 
 ## Support
 
