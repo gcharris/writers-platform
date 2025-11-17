@@ -117,7 +117,7 @@ This is NOT a local CLI tool. This is a web-based SaaS product.
 - ✅ Background jobs (FastAPI BackgroundTasks minimum, Celery preferred)
 - ✅ Environment variables (all secrets in Railway config, not in code)
 - ✅ HTTPS endpoints (accessible from anywhere)
-- ✅ CORS for writersfactory.app and writerscommunity.app
+- ✅ CORS for writersfactory.app, writerscommunity.app, and Vercel preview URLs
 
 **NOT acceptable:**
 - ❌ Local file system paths
@@ -125,13 +125,41 @@ This is NOT a local CLI tool. This is a web-based SaaS product.
 - ❌ Hardcoded API keys in code
 - ❌ "Run locally" as primary deployment
 
+**Deployment Architecture:**
+
+```
+Backend (Railway):
+- FastAPI application
+- PostgreSQL database (Railway addon)
+- Background job processing
+- File storage (Railway volumes)
+- Domain: api.writersfactory.app (or Railway subdomain)
+
+Frontends (Vercel):
+- Factory Frontend → writersfactory.app
+- Community Frontend → writerscommunity.app
+- Connect to Railway backend API via environment variables
+```
+
 **Deployment Steps:**
-1. Create Railway project
-2. Add PostgreSQL addon
-3. Configure environment variables (API keys, JWT secret, etc.)
-4. Deploy backend
-5. Run database migrations
-6. Test all endpoints via HTTPS
+1. **Railway (Backend):**
+   - Create Railway project
+   - Add PostgreSQL addon
+   - Configure environment variables (API keys, JWT secret, DATABASE_URL, etc.)
+   - Deploy backend from `backend/` directory
+   - Run database migrations
+   - Note the backend URL (e.g., `https://writers-platform-production.up.railway.app`)
+
+2. **Test Backend:**
+   - Verify /health endpoint
+   - Verify /docs (OpenAPI documentation)
+   - Test auth endpoints
+
+3. **Vercel (Frontends) - Session 2:**
+   - Will be deployed in Session 2
+   - Factory frontend from `factory-frontend/`
+   - Community frontend from `community-frontend/`
+   - Environment variable: `VITE_API_URL` pointing to Railway backend
 
 ## Important Notes
 
