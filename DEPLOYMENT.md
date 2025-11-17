@@ -354,14 +354,70 @@ Then redeploy backend to Railway.
 3. Configure DNS records as instructed by Vercel
 4. Update backend CORS if needed
 
+## Community Frontend Deployment (Vercel)
+
+### Step 1: Connect Repository
+
+1. Go to https://vercel.com and sign in
+2. Click "New Project"
+3. Import `writers-platform` repository
+4. Set **Root Directory** to `community-frontend`
+
+### Step 2: Configure Build Settings
+
+Vercel should auto-detect Vite configuration. If not, set:
+
+```
+Build Command: npm run build
+Output Directory: dist
+Install Command: npm install
+Development Command: npm run dev
+```
+
+### Step 3: Set Environment Variables
+
+In Vercel project settings, add:
+
+```
+VITE_API_URL=https://writers-platform-production.up.railway.app/api
+```
+
+Replace with your actual Railway backend URL.
+
+### Step 4: Deploy
+
+1. Click "Deploy"
+2. Wait for deployment to complete
+3. Test the deployed site at the Vercel URL
+
+### Step 5: Update Backend CORS
+
+Add Vercel deployment URL to backend CORS allowed origins (same as Factory).
+
+### Step 6: Configure Custom Domain (Optional)
+
+1. Go to Vercel project settings → Domains
+2. Add `writerscommunity.app`
+3. Configure DNS records as instructed by Vercel
+4. Update backend CORS if needed
+
 ## Testing End-to-End
 
-1. **Register new account** on Factory frontend
-2. **Create project** or upload file
-3. **View/edit scenes** in Editor
-4. **Trigger AI analysis** with scene outline
-5. **Monitor progress** and view results
-6. **Verify costs** are tracked in database
+**Factory Frontend:**
+1. Register new account on Factory frontend
+2. Create project or upload file
+3. View/edit scenes in Editor
+4. Trigger AI analysis with scene outline
+5. Monitor progress and view results
+6. Verify costs are tracked in database
+
+**Community Frontend:**
+1. Browse works without authentication
+2. Filter by badge type
+3. Read full work with Factory CTAs visible
+4. Login and upload new work with AI detection
+5. Verify badges are displayed correctly
+6. Post comments and likes
 
 ## Custom Domains Summary
 

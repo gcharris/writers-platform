@@ -1,73 +1,100 @@
-# React + TypeScript + Vite
+# Writers Community - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript frontend for the Writers Community public reading platform.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React 18** - UI library
+- **TypeScript** - Type safety
+- **Vite** - Build tool
+- **Tailwind CSS 3** - Styling
+- **React Router 7** - Routing
+- **TanStack Query** - Data fetching
+- **Zustand** - State management
+- **Axios** - HTTP client
+- **Headless UI** - UI components
+- **Heroicons** - Icons
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Badge System** - AI-analyzed, human-verified, self-certified, community uploads
+- **Public Browsing** - No auth required to read works
+- **Badge Filtering** - Filter works by badge type
+- **Work Reading** - Full-text reader with comments and likes
+- **Direct Upload** - Upload manuscripts with AI detection
+- **Factory Integration** - CTAs to Writers Factory throughout
+- **Authentication** - Login/register for uploading and commenting
 
-## Expanding the ESLint configuration
+## Development
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Prerequisites
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- Node.js 18+
+- Backend API running (see `../backend/README.md`)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Setup
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+# Install dependencies
+npm install
+
+# Copy environment file
+cp .env.example .env
+
+# Update .env with your backend API URL
+# VITE_API_URL=http://localhost:8000/api
+
+# Start development server
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Visit http://localhost:5173
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Environment Variables
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+VITE_API_URL=http://localhost:8000/api  # Backend API URL
 ```
+
+For production (Vercel):
+```bash
+VITE_API_URL=https://writers-platform-production.up.railway.app/api
+```
+
+## Deployment to Vercel
+
+1. Connect GitHub repository to Vercel
+2. Set root directory to `community-frontend`
+3. Configure environment variable: `VITE_API_URL`
+4. Deploy
+5. Update backend CORS with Vercel domain
+
+See `../DEPLOYMENT.md` for full deployment guide.
+
+## Project Structure
+
+```
+community-frontend/
+├── src/
+│   ├── api/           # API client and endpoints
+│   ├── components/    # Badge system, Layout
+│   ├── pages/         # Home, Browse, ViewWork, Upload, Login, Register
+│   ├── store/         # Auth state
+│   ├── types/         # TypeScript definitions
+│   ├── App.tsx        # Main app with routing
+│   └── index.css      # Global styles
+├── vercel.json        # Vercel config
+└── package.json       # Dependencies
+```
+
+## Key Pages
+
+- **Home** (`/`) - Landing page with badge explainer and CTAs
+- **Browse** (`/browse`) - Public works list with filtering
+- **ViewWork** (`/works/:id`) - Read full work with comments
+- **Upload** (`/upload`) - Upload manuscript with AI detection
+- **Login/Register** - Authentication
+
+## License
+
+Copyright (c) 2025 Writers Platform
