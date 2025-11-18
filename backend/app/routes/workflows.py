@@ -29,6 +29,7 @@ from app.workflows.scene_operations import (
     SceneEnhancementWorkflow,
     VoiceTestingWorkflow
 )
+from app.services.knowledge.router import KnowledgeRouter
 
 logger = logging.getLogger(__name__)
 
@@ -217,12 +218,19 @@ async def generate_scene(
         )
 
     try:
+        # Initialize knowledge router for this project
+        knowledge_router = KnowledgeRouter(
+            db=db,
+            project_id=request.project_id,
+            notebooklm_enabled=False,  # TODO: Read from project settings
+            enable_caching=True
+        )
+
         # Initialize workflow engine and scene generation workflow
         engine = WorkflowEngine()
         workflow = SceneGenerationWorkflow(
-            # TODO: Initialize with knowledge_router and agent_pool
-            knowledge_router=None,  # Will be initialized in Session 5
-            agent_pool=None  # Will be initialized in Session 5
+            knowledge_router=knowledge_router,
+            agent_pool=None  # TODO: Initialize in next step
         )
 
         # Execute workflow
@@ -336,11 +344,19 @@ async def enhance_scene(
         raise HTTPException(status_code=403, detail="Access denied")
 
     try:
+        # Initialize knowledge router for this project
+        knowledge_router = KnowledgeRouter(
+            db=db,
+            project_id=project.id,
+            notebooklm_enabled=False,  # TODO: Read from project settings
+            enable_caching=True
+        )
+
         # Initialize workflow
         engine = WorkflowEngine()
         workflow = SceneEnhancementWorkflow(
-            knowledge_router=None,  # TODO: Initialize in Session 5
-            agent_pool=None
+            knowledge_router=knowledge_router,
+            agent_pool=None  # TODO: Initialize in next step
         )
 
         # Execute enhancement workflow

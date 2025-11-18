@@ -1,12 +1,11 @@
 """Smart knowledge routing system.
 
 Routes queries to appropriate knowledge systems:
-- Cognee (local semantic graph) - Always available, uses Gemini internally
+- Database Full-Text Search (local reference files) - Always available
 - NotebookLM (external analysis) - Opt-in, configured in preferences
 
-IMPORTANT: Gemini File Search is an implementation detail of Cognee,
-not a user-facing option. Users just "ask questions" and the system
-routes intelligently.
+Knowledge is queried from the project's reference files using PostgreSQL
+full-text search for fast, accurate retrieval.
 """
 
 import logging
@@ -14,6 +13,10 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from uuid import UUID
+
+from sqlalchemy import func, or_
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +31,7 @@ class QueryType(Enum):
 
 class KnowledgeSource(Enum):
     """Available knowledge sources (internal only - not user-facing)."""
-    COGNEE = "cognee"  # Local semantic graph (uses Gemini internally)
+    DATABASE = "database"  # PostgreSQL full-text search on reference files
     NOTEBOOKLM = "notebooklm"  # External analysis (opt-in)
 
 
@@ -46,15 +49,16 @@ class KnowledgeRouter:
     """Routes knowledge queries to appropriate system.
 
     Automatically routes queries to:
-    - Cognee (local) for most queries
+    - Database (local) for most queries via PostgreSQL full-text search
     - NotebookLM (external) for analytical queries if configured
 
-    Users never see "Cognee" or "Gemini" - they just ask questions.
+    Users never see implementation details - they just ask questions.
     """
 
     def __init__(
         self,
-        project_path: Optional[Path] = None,
+        db: Session,
+        project_id: UUID,
         notebooklm_enabled: bool = False,
         notebooklm_notebook_id: Optional[str] = None,
         enable_caching: bool = True
@@ -62,19 +66,22 @@ class KnowledgeRouter:
         """Initialize knowledge router.
 
         Args:
-            project_path: Path to project (for reading preferences)
+            db: Database session for querying reference files
+            project_id: Project UUID to query reference files for
             notebooklm_enabled: Whether NotebookLM is configured
             notebooklm_notebook_id: NotebookLM notebook ID if enabled
             enable_caching: Enable query result caching
         """
-        self.project_path = project_path
+        self.db = db
+        self.project_id = project_id
         self.notebooklm_enabled = notebooklm_enabled
         self.notebooklm_notebook_id = notebooklm_notebook_id
         self.enable_caching = enable_caching
 
-        # Initialize systems (mock for now - real integrations in future)
-        self._systems = {}
-        logger.info(f"Initialized knowledge router (NotebookLM: {notebooklm_enabled})")
+        # Query cache (simple in-memory for now)
+        self._cache: Dict[str, QueryResult] = {}
+
+        logger.info(f"Initialized knowledge router for project {project_id} (NotebookLM: {notebooklm_enabled})")
 
     def classify_query(self, query: str) -> QueryType:
         """Classify query type.
@@ -117,11 +124,9 @@ class KnowledgeRouter:
             logger.debug(f"Routing analytical query to NotebookLM: {query[:50]}")
             return KnowledgeSource.NOTEBOOKLM
 
-        # All other queries go to Cognee (local semantic graph)
-        # Note: Cognee may use Gemini File Search internally, but that's
-        # an implementation detail hidden from users
-        logger.debug(f"Routing {query_type.value} query to Cognee: {query[:50]}")
-        return KnowledgeSource.COGNEE
+        # All other queries go to local database (PostgreSQL full-text search)
+        logger.debug(f"Routing {query_type.value} query to database: {query[:50]}")
+        return KnowledgeSource.DATABASE
 
     async def query(
         self,
@@ -139,6 +144,12 @@ class KnowledgeRouter:
         Returns:
             QueryResult with answer and metadata
         """
+        # Check cache first
+        cache_key = f"{query}:{max_results}"
+        if self.enable_caching and cache_key in self._cache:
+            logger.debug(f"Returning cached result for: {query[:50]}")
+            return self._cache[cache_key]
+
         # Determine source
         if force_source:
             source = KnowledgeSource(force_source)
@@ -147,9 +158,14 @@ class KnowledgeRouter:
 
         logger.info(f"Routing query to {source.value}: {query[:50]}...")
 
-        # Execute query (mock implementation)
+        # Execute query
         try:
             result = await self._execute_query(source, query, max_results)
+
+            # Cache result
+            if self.enable_caching:
+                self._cache[cache_key] = result
+
             return result
         except Exception as e:
             logger.error(f"Query failed on {source.value}: {e}")
@@ -172,51 +188,104 @@ class KnowledgeRouter:
         Returns:
             QueryResult
         """
-        if source == KnowledgeSource.COGNEE:
-            return await self._query_cognee(query, max_results)
+        if source == KnowledgeSource.DATABASE:
+            return await self._query_database(query, max_results)
         elif source == KnowledgeSource.NOTEBOOKLM:
             return await self._query_notebooklm(query, max_results)
         else:
             raise ValueError(f"Unknown knowledge source: {source}")
 
-    async def _query_cognee(self, query: str, max_results: int) -> QueryResult:
-        """Query Cognee (local semantic graph).
+    async def _query_database(self, query: str, max_results: int) -> QueryResult:
+        """Query reference files using PostgreSQL full-text search.
 
-        TODO: Replace with real Cognee integration
-        - Use existing Cognee installation (17MB)
-        - Query semantic graph
-        - Return results with references
+        Uses the GIN index on reference_files.content for fast full-text search.
 
         Args:
             query: Query text
             max_results: Maximum results to return
 
         Returns:
-            QueryResult from Cognee
+            QueryResult from database search
         """
-        # Mock implementation - replace with real Cognee integration
-        logger.debug(f"Querying Cognee: {query[:50]}")
+        from app.models.manuscript import ReferenceFile
 
-        # Simulate semantic search
-        answer = f"Based on your story knowledge base, {query.lower()} "
-        answer += "is related to the main character's development arc and the "
-        answer += "central themes of identity and belonging."
+        logger.debug(f"Querying database for project {self.project_id}: {query[:50]}")
 
-        return QueryResult(
-            source=KnowledgeSource.COGNEE,
-            answer=answer,
-            confidence=0.85,
-            references=[
-                "story_bible.md",
-                "character_profiles/protagonist.md",
-                "themes/identity.md"
-            ],
-            metadata={
-                "source": "cognee",
-                "query": query,
-                "search_type": "semantic_graph"
-            }
-        )
+        try:
+            # PostgreSQL full-text search using ts_vector
+            # The migration created: CREATE INDEX idx_reference_files_search ON reference_files
+            #     USING GIN (to_tsvector('english', content));
+
+            # Build search query - convert query to tsquery format
+            search_query = func.to_tsquery('english', func.plainto_tsquery('english', query))
+
+            # Query reference files with full-text search ranked by relevance
+            results = (
+                self.db.query(ReferenceFile)
+                .filter(ReferenceFile.project_id == self.project_id)
+                .filter(func.to_tsvector('english', ReferenceFile.content).op('@@')(search_query))
+                .order_by(
+                    func.ts_rank(
+                        func.to_tsvector('english', ReferenceFile.content),
+                        search_query
+                    ).desc()
+                )
+                .limit(max_results)
+                .all()
+            )
+
+            if not results:
+                # No results found - return empty result
+                logger.info(f"No knowledge base results found for query: {query[:50]}")
+                return QueryResult(
+                    source=KnowledgeSource.DATABASE,
+                    answer="No relevant information found in the knowledge base for this query.",
+                    confidence=0.0,
+                    references=[],
+                    metadata={
+                        "source": "database",
+                        "query": query,
+                        "results_count": 0
+                    }
+                )
+
+            # Build answer from results
+            answer_parts = []
+            references = []
+
+            for ref_file in results:
+                # Add reference
+                ref_path = f"{ref_file.category}/{ref_file.subcategory}/{ref_file.filename}".strip('/')
+                references.append(ref_path)
+
+                # Extract relevant snippet (first 200 chars of content)
+                snippet = ref_file.content[:200] + "..." if len(ref_file.content) > 200 else ref_file.content
+                answer_parts.append(f"**{ref_file.filename}**: {snippet}")
+
+            # Combine into answer
+            answer = "Based on your knowledge base:\n\n" + "\n\n".join(answer_parts)
+
+            # Calculate confidence based on number of results
+            confidence = min(0.95, 0.5 + (len(results) * 0.1))
+
+            logger.info(f"Found {len(results)} knowledge base results for query")
+
+            return QueryResult(
+                source=KnowledgeSource.DATABASE,
+                answer=answer,
+                confidence=confidence,
+                references=references,
+                metadata={
+                    "source": "database",
+                    "query": query,
+                    "results_count": len(results),
+                    "search_type": "postgresql_fulltext"
+                }
+            )
+
+        except Exception as e:
+            logger.error(f"Database query failed: {e}")
+            raise
 
     async def _query_notebooklm(self, query: str, max_results: int) -> QueryResult:
         """Query NotebookLM (external analysis).
@@ -276,20 +345,20 @@ class KnowledgeRouter:
         Returns:
             QueryResult from fallback source
         """
-        # If NotebookLM failed, try Cognee
+        # If NotebookLM failed, try database
         if failed_source == KnowledgeSource.NOTEBOOKLM:
             try:
-                logger.info("NotebookLM failed, falling back to Cognee")
-                result = await self._query_cognee(query, max_results)
+                logger.info("NotebookLM failed, falling back to database")
+                result = await self._query_database(query, max_results)
                 return result
             except Exception as e:
-                logger.error(f"Cognee fallback also failed: {e}")
+                logger.error(f"Database fallback also failed: {e}")
                 raise Exception(f"All knowledge sources failed for query: {query}")
 
-        # If Cognee failed and NotebookLM is enabled, try it
-        if failed_source == KnowledgeSource.COGNEE and self.notebooklm_enabled:
+        # If database failed and NotebookLM is enabled, try it
+        if failed_source == KnowledgeSource.DATABASE and self.notebooklm_enabled:
             try:
-                logger.info("Cognee failed, falling back to NotebookLM")
+                logger.info("Database failed, falling back to NotebookLM")
                 result = await self._query_notebooklm(query, max_results)
                 return result
             except Exception as e:
