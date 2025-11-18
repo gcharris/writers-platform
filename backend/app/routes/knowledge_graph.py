@@ -311,18 +311,36 @@ async def update_entity(
     if not graph_record:
         raise HTTPException(404, "Knowledge graph not found")
 
-    kg = KnowledgeGraphService.from_json(graph_record.graph_data)
+    try:
+        # Load graph with validation
+        kg = KnowledgeGraphService.from_json(graph_record.graph_data)
 
-    # Update entity
-    success = kg.update_entity(entity_id, **updates)
-    if not success:
-        raise HTTPException(404, f"Entity '{entity_id}' not found")
+        # Update entity
+        success = kg.update_entity(entity_id, **updates)
+        if not success:
+            raise HTTPException(404, f"Entity '{entity_id}' not found")
 
-    # Save back to database
-    graph_record.graph_data = kg.to_json()
-    db.commit()
+        # Serialize graph with error handling
+        try:
+            graph_record.graph_data = kg.to_json()
+        except Exception as e:
+            logger.error(f"Failed to serialize graph after update: {e}")
+            raise HTTPException(500, "Failed to save graph changes")
 
-    return {"status": "updated", "entity_id": entity_id}
+        db.commit()
+
+        return {"status": "updated", "entity_id": entity_id}
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        # from_json validation errors
+        logger.error(f"Invalid graph data for project {project_id}: {e}")
+        raise HTTPException(500, f"Graph data corrupted: {str(e)}")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Update entity failed: {e}", exc_info=True)
+        raise HTTPException(500, f"Internal error: {str(e)}")
 
 
 @router.delete("/projects/{project_id}/entities/{entity_id}")
@@ -350,20 +368,37 @@ async def delete_entity(
     if not graph_record:
         raise HTTPException(404, "Knowledge graph not found")
 
-    kg = KnowledgeGraphService.from_json(graph_record.graph_data)
+    try:
+        # Load graph with validation
+        kg = KnowledgeGraphService.from_json(graph_record.graph_data)
 
-    # Delete entity
-    success = kg.delete_entity(entity_id)
-    if not success:
-        raise HTTPException(404, f"Entity '{entity_id}' not found")
+        # Delete entity
+        success = kg.delete_entity(entity_id)
+        if not success:
+            raise HTTPException(404, f"Entity '{entity_id}' not found")
 
-    # Save back to database
-    graph_record.graph_data = kg.to_json()
-    graph_record.entity_count = kg.metadata.entity_count
-    graph_record.relationship_count = kg.metadata.relationship_count
-    db.commit()
+        # Serialize and save with error handling
+        try:
+            graph_record.graph_data = kg.to_json()
+            graph_record.entity_count = kg.metadata.entity_count
+            graph_record.relationship_count = kg.metadata.relationship_count
+        except Exception as e:
+            logger.error(f"Failed to serialize graph after deletion: {e}")
+            raise HTTPException(500, "Failed to save graph changes")
 
-    return {"status": "deleted", "entity_id": entity_id}
+        db.commit()
+
+        return {"status": "deleted", "entity_id": entity_id}
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        logger.error(f"Invalid graph data for project {project_id}: {e}")
+        raise HTTPException(500, f"Graph data corrupted: {str(e)}")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Delete entity failed: {e}", exc_info=True)
+        raise HTTPException(500, f"Internal error: {str(e)}")
 
 
 @router.get("/projects/{project_id}/entities/{entity_id}/connections")
@@ -548,36 +583,42 @@ async def extract_from_scene(
     if not scene:
         raise HTTPException(404, "Scene not found")
 
-    # Create extraction job
-    from uuid import uuid4
-    job = ExtractionJob(
-        id=uuid4(),
-        project_id=project_id,
-        scene_id=request.scene_id,
-        status="pending",
-        extractor_type=request.extractor_type,
-        model_name=request.model_name
-    )
-    db.add(job)
-    db.commit()
-    db.refresh(job)
+    try:
+        # Create extraction job
+        from uuid import uuid4
+        job = ExtractionJob(
+            id=uuid4(),
+            project_id=project_id,
+            scene_id=request.scene_id,
+            status="pending",
+            extractor_type=request.extractor_type,
+            model_name=request.model_name
+        )
+        db.add(job)
+        db.commit()
+        db.refresh(job)
 
-    # Schedule background extraction
-    background_tasks.add_task(
-        run_extraction_job,
-        job_id=str(job.id),
-        project_id=project_id,
-        scene_id=request.scene_id,
-        scene_content=scene.content,
-        extractor_type=request.extractor_type,
-        model_name=request.model_name
-    )
+        # Schedule background extraction
+        background_tasks.add_task(
+            run_extraction_job,
+            job_id=str(job.id),
+            project_id=project_id,
+            scene_id=request.scene_id,
+            scene_content=scene.content,
+            extractor_type=request.extractor_type,
+            model_name=request.model_name
+        )
 
-    return {
-        "job_id": str(job.id),
-        "status": "pending",
-        "message": "Extraction job started"
-    }
+        return {
+            "job_id": str(job.id),
+            "status": "pending",
+            "message": "Extraction job started"
+        }
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to create extraction job: {e}", exc_info=True)
+        raise HTTPException(500, f"Failed to start extraction: {str(e)}")
 
 
 @router.post("/projects/{project_id}/extract-all")
