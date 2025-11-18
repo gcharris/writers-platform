@@ -29,7 +29,10 @@ CREATE TABLE IF NOT EXISTS project_graphs (
 );
 
 CREATE INDEX idx_project_graphs_project_id ON project_graphs(project_id);
-CREATE INDEX idx_project_graphs_last_updated ON project_graphs(last_updated);
+CREATE INDEX idx_project_graphs_last_updated ON project_graphs(last_updated DESC);
+
+-- GIN index for fast JSONB queries on graph data (CRITICAL for performance)
+CREATE INDEX idx_project_graphs_graph_data_gin ON project_graphs USING GIN (graph_data);
 
 -- Extraction jobs tracking
 CREATE TABLE IF NOT EXISTS extraction_jobs (
