@@ -449,3 +449,295 @@ async def configure_notebooklm_notebooks(
         "notebooklm_enabled": bool(notebooks),
         "auto_query_on_copilot": auto_query_on_copilot
     }
+
+
+@router.post("/batch-extract")
+async def batch_extract_from_notebooklm(
+    project_ids: Optional[List[UUID]] = Query(None, description="Specific project IDs (or all if not specified)"),
+    extract_types: List[str] = Query(["character", "world", "themes"], description="What to extract: character, world, themes"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    🚀 BATCH EXTRACTION: Extract NotebookLM data for multiple projects at once.
+
+    This is much more efficient than extracting one project at a time.
+
+    Args:
+        project_ids: List of project UUIDs to process (or None for all user's projects)
+        extract_types: What to extract - "character", "world", "themes"
+
+    Returns:
+        Batch extraction results with success/failure counts
+
+    Example:
+        POST /api/notebooklm/batch-extract
+        ?extract_types=character&extract_types=world
+        ?project_ids=uuid1&project_ids=uuid2
+
+        Or extract for ALL projects:
+        POST /api/notebooklm/batch-extract?extract_types=character
+    """
+    # Get projects to process
+    if project_ids:
+        # Specific projects
+        projects = db.query(Project).filter(
+            Project.id.in_(project_ids),
+            Project.user_id == current_user.id
+        ).all()
+    else:
+        # All user's projects with NotebookLM configured
+        projects = db.query(Project).filter(
+            Project.user_id == current_user.id,
+            Project.notebooklm_notebooks.isnot(None)
+        ).all()
+
+    if not projects:
+        raise HTTPException(404, "No projects found with NotebookLM configuration")
+
+    # Process each project
+    results = {
+        "total_projects": len(projects),
+        "success_count": 0,
+        "error_count": 0,
+        "skipped_count": 0,
+        "total_entities_added": 0,
+        "total_entities_enriched": 0,
+        "project_results": []
+    }
+
+    client = get_mcp_client()
+
+    for project in projects:
+        project_result = {
+            "project_id": str(project.id),
+            "project_title": project.title,
+            "status": "success",
+            "entities_added": 0,
+            "entities_enriched": 0,
+            "errors": []
+        }
+
+        notebooks = project.notebooklm_notebooks or {}
+
+        if not notebooks:
+            project_result["status"] = "skipped"
+            project_result["errors"].append("No NotebookLM notebooks configured")
+            results["skipped_count"] += 1
+            results["project_results"].append(project_result)
+            continue
+
+        # Extract character research
+        if "character" in extract_types and "character_research" in notebooks:
+            try:
+                notebook_id = notebooks["character_research"]
+
+                # Query notebook to get character names
+                # For batch extraction, we'll extract "main characters" generically
+                char_response = await client.query_notebook(
+                    notebook_id=notebook_id,
+                    query="List the main characters in this story with brief descriptions",
+                    max_sources=10
+                )
+
+                # Use LLM to extract entities from the response
+                extractor = LLMExtractor(model="claude-sonnet-4.5")
+                extraction = await extractor.extract_entities(
+                    content=char_response.answer,
+                    scene_id=f"notebooklm-batch-{notebook_id}",
+                    project_id=str(project.id)
+                )
+
+                # Add to graph
+                project_graph = db.query(ProjectGraph).filter(
+                    ProjectGraph.project_id == project.id
+                ).first()
+
+                if not project_graph:
+                    project_graph = ProjectGraph(
+                        project_id=project.id,
+                        graph_data={}
+                    )
+                    db.add(project_graph)
+                    db.flush()
+
+                # Load KG
+                if project_graph.graph_data:
+                    kg = KnowledgeGraphService.from_json(project_graph.graph_data)
+                else:
+                    kg = KnowledgeGraphService(str(project.id))
+
+                # Add entities with deduplication
+                for entity_dict in extraction.get("entities", []):
+                    existing = kg.find_entity_by_name(entity_dict["name"], fuzzy=True)
+
+                    if existing:
+                        # Enrich existing
+                        enriched_desc = existing.description + "\n\n[Batch Extract]: " + entity_dict.get("description", "")
+                        if "notebooklm_sources" not in existing.properties:
+                            existing.properties["notebooklm_sources"] = []
+                        existing.properties["notebooklm_sources"].extend(char_response.sources)
+                        kg.update_entity(existing.id, description=enriched_desc)
+                        project_result["entities_enriched"] += 1
+                    else:
+                        # Create new
+                        from uuid import uuid4
+                        entity = Entity(
+                            id=str(uuid4()),
+                            name=entity_dict["name"],
+                            entity_type=entity_dict.get("type", "character"),
+                            description=entity_dict.get("description", ""),
+                            attributes=entity_dict.get("attributes", {}),
+                            source_scene_id=f"notebooklm:batch:{notebook_id}"
+                        )
+                        entity.properties["source_type"] = "notebooklm_batch"
+                        entity.properties["notebooklm_sources"] = char_response.sources
+                        kg.add_entity(entity)
+                        project_result["entities_added"] += 1
+
+                # Save graph
+                project_graph.graph_data = json.loads(kg.to_json())
+
+            except Exception as e:
+                logger.error(f"Error extracting characters for project {project.id}: {e}")
+                project_result["errors"].append(f"Character extraction: {str(e)}")
+
+        # Extract world building
+        if "world" in extract_types and "world_building" in notebooks:
+            try:
+                notebook_id = notebooks["world_building"]
+
+                world_response = await client.query_notebook(
+                    notebook_id=notebook_id,
+                    query="Describe the key locations, technologies, and world-building elements",
+                    max_sources=10
+                )
+
+                # Extract and add entities (similar process)
+                extractor = LLMExtractor(model="claude-sonnet-4.5")
+                extraction = await extractor.extract_entities(
+                    content=world_response.answer,
+                    scene_id=f"notebooklm-batch-world-{notebook_id}",
+                    project_id=str(project.id)
+                )
+
+                # Get/create graph
+                project_graph = db.query(ProjectGraph).filter(
+                    ProjectGraph.project_id == project.id
+                ).first()
+
+                if project_graph:
+                    kg = KnowledgeGraphService.from_json(project_graph.graph_data)
+
+                    # Add entities
+                    for entity_dict in extraction.get("entities", []):
+                        existing = kg.find_entity_by_name(entity_dict["name"], fuzzy=True)
+
+                        if existing:
+                            enriched_desc = existing.description + "\n\n[World Building]: " + entity_dict.get("description", "")
+                            if "notebooklm_sources" not in existing.properties:
+                                existing.properties["notebooklm_sources"] = []
+                            existing.properties["notebooklm_sources"].extend(world_response.sources)
+                            kg.update_entity(existing.id, description=enriched_desc)
+                            project_result["entities_enriched"] += 1
+                        else:
+                            from uuid import uuid4
+                            entity = Entity(
+                                id=str(uuid4()),
+                                name=entity_dict["name"],
+                                entity_type=entity_dict.get("type", "location"),
+                                description=entity_dict.get("description", ""),
+                                attributes=entity_dict.get("attributes", {}),
+                                source_scene_id=f"notebooklm:batch:{notebook_id}"
+                            )
+                            entity.properties["source_type"] = "notebooklm_batch"
+                            entity.properties["notebooklm_sources"] = world_response.sources
+                            kg.add_entity(entity)
+                            project_result["entities_added"] += 1
+
+                    # Save
+                    project_graph.graph_data = json.loads(kg.to_json())
+
+            except Exception as e:
+                logger.error(f"Error extracting world building for project {project.id}: {e}")
+                project_result["errors"].append(f"World building extraction: {str(e)}")
+
+        # Extract themes
+        if "themes" in extract_types and "themes" in notebooks:
+            try:
+                notebook_id = notebooks["themes"]
+
+                themes_response = await client.query_notebook(
+                    notebook_id=notebook_id,
+                    query="What are the main themes, philosophical ideas, and concepts explored?",
+                    max_sources=10
+                )
+
+                # Extract and add entities
+                extractor = LLMExtractor(model="claude-sonnet-4.5")
+                extraction = await extractor.extract_entities(
+                    content=themes_response.answer,
+                    scene_id=f"notebooklm-batch-themes-{notebook_id}",
+                    project_id=str(project.id)
+                )
+
+                # Get/create graph
+                project_graph = db.query(ProjectGraph).filter(
+                    ProjectGraph.project_id == project.id
+                ).first()
+
+                if project_graph:
+                    kg = KnowledgeGraphService.from_json(project_graph.graph_data)
+
+                    # Add entities
+                    for entity_dict in extraction.get("entities", []):
+                        existing = kg.find_entity_by_name(entity_dict["name"], fuzzy=True)
+
+                        if existing:
+                            enriched_desc = existing.description + "\n\n[Themes]: " + entity_dict.get("description", "")
+                            if "notebooklm_sources" not in existing.properties:
+                                existing.properties["notebooklm_sources"] = []
+                            existing.properties["notebooklm_sources"].extend(themes_response.sources)
+                            kg.update_entity(existing.id, description=enriched_desc)
+                            project_result["entities_enriched"] += 1
+                        else:
+                            from uuid import uuid4
+                            entity = Entity(
+                                id=str(uuid4()),
+                                name=entity_dict["name"],
+                                entity_type=entity_dict.get("type", "theme"),
+                                description=entity_dict.get("description", ""),
+                                attributes=entity_dict.get("attributes", {}),
+                                source_scene_id=f"notebooklm:batch:{notebook_id}"
+                            )
+                            entity.properties["source_type"] = "notebooklm_batch"
+                            entity.properties["notebooklm_sources"] = themes_response.sources
+                            kg.add_entity(entity)
+                            project_result["entities_added"] += 1
+
+                    # Save
+                    project_graph.graph_data = json.loads(kg.to_json())
+
+            except Exception as e:
+                logger.error(f"Error extracting themes for project {project.id}: {e}")
+                project_result["errors"].append(f"Themes extraction: {str(e)}")
+
+        # Commit all changes for this project
+        try:
+            db.commit()
+            if project_result["errors"]:
+                project_result["status"] = "partial"
+            results["success_count"] += 1
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Error saving project {project.id}: {e}")
+            project_result["status"] = "error"
+            project_result["errors"].append(f"Database save: {str(e)}")
+            results["error_count"] += 1
+
+        # Update totals
+        results["total_entities_added"] += project_result["entities_added"]
+        results["total_entities_enriched"] += project_result["entities_enriched"]
+        results["project_results"].append(project_result)
+
+    return results

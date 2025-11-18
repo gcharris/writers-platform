@@ -29,6 +29,15 @@ export const NotebookLMSettings: React.FC<NotebookLMSettingsProps> = ({ projectI
 
   const [autoQuery, setAutoQuery] = useState(true);
 
+  // Batch extraction state
+  const [extracting, setExtracting] = useState(false);
+  const [extractTypes, setExtractTypes] = useState({
+    character: true,
+    world: true,
+    themes: true
+  });
+  const [batchResults, setBatchResults] = useState<any>(null);
+
   useEffect(() => {
     if (projectId) {
       loadCurrentSettings();
@@ -104,6 +113,40 @@ export const NotebookLMSettings: React.FC<NotebookLMSettingsProps> = ({ projectI
       alert('Error saving configuration');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleBatchExtract = async () => {
+    setExtracting(true);
+    setBatchResults(null);
+
+    try {
+      const params = new URLSearchParams();
+      params.append('project_ids', projectId!);
+
+      // Add extract types
+      if (extractTypes.character) params.append('extract_types', 'character');
+      if (extractTypes.world) params.append('extract_types', 'world');
+      if (extractTypes.themes) params.append('extract_types', 'themes');
+
+      const response = await fetch(`/api/notebooklm/batch-extract?${params.toString()}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        const results = await response.json();
+        setBatchResults(results);
+      } else {
+        alert('Failed to extract NotebookLM data');
+      }
+    } catch (error) {
+      console.error('Error during batch extraction:', error);
+      alert('Error during batch extraction');
+    } finally {
+      setExtracting(false);
     }
   };
 
@@ -248,6 +291,109 @@ export const NotebookLMSettings: React.FC<NotebookLMSettingsProps> = ({ projectI
           Cancel
         </button>
       </div>
+
+      {/* 🚀 BATCH EXTRACTION Section */}
+      {(urls.character_research || urls.world_building || urls.themes) && (
+        <div className="mt-8 p-6 bg-gradient-to-br from-purple-900/30 to-blue-900/30 border border-purple-700 rounded-lg">
+          <div className="mb-4">
+            <h2 className="text-xl font-bold text-purple-300 mb-2">
+              🚀 Batch Extraction
+            </h2>
+            <p className="text-sm text-gray-400">
+              Extract research from all configured NotebookLM notebooks into your Knowledge Graph at once.
+              This is faster than extracting one notebook at a time.
+            </p>
+          </div>
+
+          {/* Extract Type Checkboxes */}
+          <div className="mb-4 space-y-2">
+            <p className="text-sm font-medium text-gray-300 mb-2">What to extract:</p>
+            <div className="flex flex-wrap gap-4">
+              {urls.character_research && (
+                <label className="flex items-center gap-2 text-sm text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={extractTypes.character}
+                    onChange={(e) => setExtractTypes({ ...extractTypes, character: e.target.checked })}
+                  />
+                  Character Research
+                </label>
+              )}
+              {urls.world_building && (
+                <label className="flex items-center gap-2 text-sm text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={extractTypes.world}
+                    onChange={(e) => setExtractTypes({ ...extractTypes, world: e.target.checked })}
+                  />
+                  World Building
+                </label>
+              )}
+              {urls.themes && (
+                <label className="flex items-center gap-2 text-sm text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={extractTypes.themes}
+                    onChange={(e) => setExtractTypes({ ...extractTypes, themes: e.target.checked })}
+                  />
+                  Themes & Philosophy
+                </label>
+              )}
+            </div>
+          </div>
+
+          {/* Extract Button */}
+          <button
+            onClick={handleBatchExtract}
+            disabled={extracting || (!extractTypes.character && !extractTypes.world && !extractTypes.themes)}
+            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {extracting ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                Extracting...
+              </>
+            ) : (
+              '⚡ Start Batch Extraction'
+            )}
+          </button>
+
+          {/* Batch Results */}
+          {batchResults && (
+            <div className="mt-4 p-4 bg-gray-900/50 rounded border border-gray-700">
+              <h3 className="font-semibold text-green-400 mb-2">
+                ✅ Extraction Complete!
+              </h3>
+              <div className="text-sm text-gray-300 space-y-1">
+                <p>• Projects processed: {batchResults.total_projects}</p>
+                <p>• Successful: {batchResults.success_count}</p>
+                <p>• Entities added: {batchResults.total_entities_added}</p>
+                <p>• Entities enriched: {batchResults.total_entities_enriched}</p>
+                {batchResults.error_count > 0 && (
+                  <p className="text-red-400">• Errors: {batchResults.error_count}</p>
+                )}
+              </div>
+
+              {/* Per-project results */}
+              {batchResults.project_results && batchResults.project_results.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {batchResults.project_results.map((result: any, index: number) => (
+                    <div key={index} className="text-xs p-2 bg-gray-800 rounded">
+                      <p className="font-semibold text-gray-300">{result.project_title}</p>
+                      <p className="text-gray-400">
+                        Status: {result.status} | Added: {result.entities_added} | Enriched: {result.entities_enriched}
+                      </p>
+                      {result.errors && result.errors.length > 0 && (
+                        <p className="text-red-400 mt-1">Errors: {result.errors.join(', ')}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Help Text */}
       <div className="mt-8 p-4 bg-gray-900 rounded border border-gray-800">
