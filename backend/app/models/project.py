@@ -48,3 +48,6 @@ class Project(Base):
     # Manuscript structure (from factory-core integration)
     manuscript_acts = relationship("ManuscriptAct", back_populates="project", cascade="all, delete-orphan", order_by="ManuscriptAct.act_number")
     reference_files = relationship("ReferenceFile", back_populates="project", cascade="all, delete-orphan")
+
+    # Knowledge Graph
+    knowledge_graph = relationship("ProjectGraph", back_populates="project", uselist=False, cascade="all, delete-orphan")
