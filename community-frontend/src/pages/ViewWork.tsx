@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { worksApi, commentsApi } from '../api/community';
 import { useAuthStore } from '../store/authStore';
 import Badge from '../components/Badge';
-import { ArrowLeftIcon, HeartIcon, EyeIcon, SparklesIcon, ChatBubbleLeftIcon, CubeTransparentIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, HeartIcon, EyeIcon, SparklesIcon, ChatBubbleLeftIcon, CubeTransparentIcon, BookOpenIcon, AcademicCapIcon } from '@heroicons/react/24/outline';
 
 // Phase 2: Import Knowledge Graph visualization from Factory
 // Note: This assumes both frontends are in the same monorepo
@@ -27,6 +27,115 @@ const GraphVisualization = ({ projectId }: { projectId: string }) => {
       >
         Open Interactive Graph
       </a>
+    </div>
+  );
+};
+
+// Phase 2: Research Citations Display
+// Shows NotebookLM research sources for AI-Analyzed works
+const ResearchCitations = ({ work }: { work: any }) => {
+  const [researchData, setResearchData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch knowledge graph to extract NotebookLM sources
+  useState(() => {
+    if (!work.factory_project_id) {
+      setLoading(false);
+      return;
+    }
+
+    // Fetch knowledge graph data from Factory API
+    fetch(`/api/knowledge-graph/projects/${work.factory_project_id}/graph`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+      .then(res => res.json())
+      .then(data => {
+        // Extract entities with NotebookLM sources
+        const notebooklmEntities = data.nodes?.filter((node: any) =>
+          node.properties?.source_type === 'notebooklm' &&
+          node.properties?.notebooklm_sources?.length > 0
+        ) || [];
+
+        setResearchData(notebooklmEntities);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to load research data:', err);
+        setLoading(false);
+      });
+  });
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+          <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!researchData || researchData.length === 0) {
+    return null;
+  }
+
+  // Extract unique sources
+  const allSources = researchData.flatMap((entity: any) =>
+    entity.properties?.notebooklm_sources || []
+  );
+  const uniqueSources = Array.from(new Set(allSources.map((s: any) => s.url)))
+    .map(url => allSources.find((s: any) => s.url === url))
+    .filter(Boolean)
+    .slice(0, 5); // Show top 5 sources
+
+  return (
+    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg shadow-sm border border-green-200 p-6 mb-6">
+      <div className="flex items-center gap-2 mb-4">
+        <AcademicCapIcon className="h-6 w-6 text-green-600" />
+        <h3 className="text-lg font-semibold text-gray-900">Research Foundation</h3>
+      </div>
+
+      <p className="text-sm text-gray-700 mb-4">
+        This story is grounded in real research from NotebookLM. The author consulted {researchData.length} research-backed {researchData.length === 1 ? 'element' : 'elements'}.
+      </p>
+
+      {uniqueSources.length > 0 && (
+        <div className="space-y-3">
+          <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+            <BookOpenIcon className="h-4 w-4 text-green-600" />
+            Sources Consulted
+          </h4>
+          <ul className="space-y-2">
+            {uniqueSources.map((source: any, index: number) => (
+              <li key={index} className="text-sm">
+                <a
+                  href={source.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-green-700 hover:text-green-800 hover:underline flex items-start gap-2"
+                >
+                  <span className="text-green-600 font-medium">{index + 1}.</span>
+                  <span className="flex-1">
+                    {source.title || source.url}
+                    {source.page_number && (
+                      <span className="text-gray-500 ml-1">(p. {source.page_number})</span>
+                    )}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="mt-4 pt-4 border-t border-green-200">
+        <p className="text-xs text-gray-600">
+          Research citations extracted from the author's NotebookLM workspace
+        </p>
+      </div>
     </div>
   );
 };
@@ -279,6 +388,9 @@ export default function ViewWork() {
                 </a>
               </div>
             )}
+
+            {/* Phase 2: Research Citations Display */}
+            {work.factory_project_id && <ResearchCitations work={work} />}
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">About the Author</h3>
