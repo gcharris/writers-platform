@@ -13,7 +13,7 @@ import type {
 // Auth API
 export const authApi = {
   login: async (credentials: LoginCredentials) => {
-    const response = await apiClient.post('/auth/login', credentials);
+    const response = await apiClient.post('/auth/login/json', credentials);
     return response.data;
   },
 
