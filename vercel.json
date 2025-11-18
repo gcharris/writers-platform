@@ -1,0 +1,13 @@
+{
+  "buildCommand": "cd factory-frontend && npm install && npm run build",
+  "outputDirectory": "factory-frontend/dist",
+  "devCommand": "cd factory-frontend && npm run dev",
+  "installCommand": "cd factory-frontend && npm install",
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
