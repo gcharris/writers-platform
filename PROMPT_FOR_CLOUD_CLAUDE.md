@@ -6,7 +6,7 @@ Copy and paste this into Cloud Claude Code to start the Knowledge Graph implemen
 
 # Knowledge Graph Implementation - Option A: Gold Standard
 
-**Mission**: Implement the complete, production-grade Knowledge Graph system for The Explants Writers Platform.
+**Mission**: Implement the complete, production-grade Knowledge Graph system for the Writers Platform.
 
 **Budget**: $800 Claude Cloud credits
 **Timeline**: Take your time - we have all the time to build it right

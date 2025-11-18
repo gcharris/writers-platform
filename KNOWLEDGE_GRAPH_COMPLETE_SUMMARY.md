@@ -8,7 +8,7 @@
 
 ## Overview
 
-This is a complete, production-ready knowledge graph implementation for The Explants Writers Platform. Built with zero compromises, following the user's directive: "We have all the time in the world to build a gold standard product."
+This is a complete, production-ready knowledge graph implementation for the Writers Platform. Built with zero compromises, following the user's directive: "We have all the time in the world to build a gold standard product."
 
 The system automatically extracts entities (characters, locations, objects, concepts, events) and relationships from scenes, builds an interactive 3D knowledge graph, and provides graph-powered search and context to writers.
 

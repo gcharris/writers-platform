@@ -427,7 +427,7 @@ Once deployed, writers will have:
 **Copy this prompt to Cloud Claude Code**:
 
 ```
-I need you to implement the complete Knowledge Graph system for The Explants Writers Platform.
+I need you to implement the complete Knowledge Graph system for the Writers Platform.
 
 All documentation is in the repo under these files:
 - CLOUD_CLAUDE_KG_HANDOFF.md (your main guide)
