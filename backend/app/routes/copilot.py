@@ -444,11 +444,15 @@ async def copilot_stream(
             del active_connections[project_id]
 
     except Exception as e:
-        logger.error(f"Copilot error: {e}")
+        logger.error(f"Copilot error: {e}", exc_info=True)
         active_connections[project_id].discard(websocket)
 
     finally:
-        db.close()
+        # Always close database session to prevent connection leaks
+        try:
+            db.close()
+        except Exception as e:
+            logger.error(f"Error closing database session: {e}")
 
 
 @router.get("/{project_id}/status")
