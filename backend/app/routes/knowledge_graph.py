@@ -9,8 +9,9 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 from pydantic import BaseModel
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
+from collections import defaultdict
 
 from app.core.database import get_db
 from app.core.security import get_current_user
@@ -26,6 +27,44 @@ from app.services.knowledge_graph.models import EntityType, RelationType
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/knowledge-graph", tags=["knowledge-graph"])
+
+# ============================================
+# Rate Limiting for Expensive Operations
+# ============================================
+# Simple in-memory rate limiting to prevent cost explosion
+# Limits: 1 extract-all request per 5 minutes per user
+_extract_all_rate_limit = defaultdict(list)  # user_id -> list of timestamps
+EXTRACT_ALL_WINDOW_MINUTES = 5
+EXTRACT_ALL_MAX_REQUESTS = 1
+
+
+def check_extract_all_rate_limit(user_id: str) -> None:
+    """
+    Rate limit check for extract-all endpoint.
+    Prevents cost explosion from accidental multiple requests.
+
+    Raises HTTPException if rate limit exceeded.
+    """
+    now = datetime.utcnow()
+    window_start = now - timedelta(minutes=EXTRACT_ALL_WINDOW_MINUTES)
+
+    # Get user's recent requests
+    user_requests = _extract_all_rate_limit[user_id]
+
+    # Remove old requests outside window
+    user_requests[:] = [ts for ts in user_requests if ts > window_start]
+
+    # Check if limit exceeded
+    if len(user_requests) >= EXTRACT_ALL_MAX_REQUESTS:
+        next_allowed = user_requests[0] + timedelta(minutes=EXTRACT_ALL_WINDOW_MINUTES)
+        wait_seconds = (next_allowed - now).total_seconds()
+        raise HTTPException(
+            status_code=429,
+            detail=f"Rate limit exceeded. Extract-all limited to {EXTRACT_ALL_MAX_REQUESTS} request per {EXTRACT_ALL_WINDOW_MINUTES} minutes. Try again in {int(wait_seconds)} seconds."
+        )
+
+    # Add current request
+    user_requests.append(now)
 
 
 # ============================================================================
@@ -635,7 +674,12 @@ async def extract_from_all_scenes(
 
     WARNING: This can be expensive if using LLM extraction.
     Consider using 'ner' extractor for large projects.
+
+    Rate Limited: 1 request per 5 minutes per user to prevent cost explosion.
     """
+    # CRITICAL: Check rate limit BEFORE any expensive operations
+    check_extract_all_rate_limit(str(current_user.id))
+
     # Verify access
     project = db.query(Project).filter(
         Project.id == project_id,
