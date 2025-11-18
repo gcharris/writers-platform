@@ -50,6 +50,8 @@ app.add_middleware(
         # Vercel deployments (specific domains - wildcards don't work with CORS)
         "https://writers-platform.vercel.app",
         "https://writers-platform-git-main-writers-app-development.vercel.app",
+        # Vercel preview deployments
+        "https://writers-platform-lmmszw03d-writers-app-development.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
