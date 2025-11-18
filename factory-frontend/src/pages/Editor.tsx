@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { projectsApi } from '../api/factory';
@@ -51,17 +51,17 @@ export default function Editor() {
     }
   }, [selectedSceneId, scenes]);
 
-  const handleContentChange = (value: string) => {
+  const handleContentChange = useCallback((value: string) => {
     setEditingContent(value);
     setHasUnsavedChanges(true);
-  };
+  }, []);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     // In a real implementation, this would update the scene via API
     // For now, we'll just clear the unsaved changes flag
     setHasUnsavedChanges(false);
     // TODO: Implement scene update API
-  };
+  }, []);
 
   const selectedScene = scenes?.find((s: Scene) => s.id === selectedSceneId);
   const wordCount = editingContent.split(/\s+/).filter(Boolean).length;
