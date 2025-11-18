@@ -248,14 +248,25 @@ async def generate_scene(
             agent_pool=agent_pool
         )
 
-        # Execute workflow
+        # Execute workflow with timeout protection (10 minutes max)
         logger.info(f"Starting scene generation workflow for project {request.project_id}")
-        result = await workflow.run(
-            outline=request.outline,
-            model_name=request.model_name,
-            use_knowledge_context=request.use_knowledge_context,
-            context_queries=request.context_queries
-        )
+        import asyncio
+        try:
+            result = await asyncio.wait_for(
+                workflow.run(
+                    outline=request.outline,
+                    model_name=request.model_name,
+                    use_knowledge_context=request.use_knowledge_context,
+                    context_queries=request.context_queries
+                ),
+                timeout=600  # 10 minutes
+            )
+        except asyncio.TimeoutError:
+            logger.error(f"Workflow timed out after 600 seconds for project {request.project_id}")
+            raise HTTPException(
+                status_code=504,
+                detail="Workflow execution timed out after 10 minutes"
+            )
 
         # Store workflow result for status queries
         active_workflows[result.workflow_id] = result

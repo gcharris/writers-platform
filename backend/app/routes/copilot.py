@@ -147,9 +147,13 @@ class WritingContextManager:
             text_lower = text.lower()
             for entity in all_entities:
                 if entity.name.lower() in text_lower:
+                    # Safely convert entity_type to string (handle enum or plain string)
+                    entity_type_str = (entity.entity_type.value
+                                      if hasattr(entity.entity_type, 'value')
+                                      else str(entity.entity_type))
                     mentioned.append({
                         "name": entity.name,
-                        "type": entity.entity_type.value,  # Convert enum to string
+                        "type": entity_type_str,
                         "description": entity.description or "",
                         "attributes": entity.attributes
                     })

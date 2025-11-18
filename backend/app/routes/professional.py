@@ -205,7 +205,15 @@ async def discover_works(
         Work.view_count.desc()
     )
 
-    works = query.limit(limit).offset(offset).all()
+    # Execute query with error handling
+    try:
+        works = query.limit(limit).offset(offset).all()
+    except Exception as e:
+        logger.error(f"Discovery query failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to discover works. Please try again."
+        )
 
     return [
         WorkDiscoveryResponse(
