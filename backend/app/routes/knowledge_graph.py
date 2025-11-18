@@ -667,9 +667,9 @@ async def extract_from_scene(
 @router.post("/projects/{project_id}/extract-all")
 async def extract_from_all_scenes(
     project_id: str,
+    background_tasks: BackgroundTasks,
     extractor_type: str = "llm",
     model_name: Optional[str] = "claude-sonnet-4.5",
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
