@@ -30,10 +30,22 @@ from app.workflows.scene_operations import (
     VoiceTestingWorkflow
 )
 from app.services.knowledge.router import KnowledgeRouter
+from app.core.agent_pool_initializer import create_default_agent_pool
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/workflows", tags=["workflows"])
+
+# Global agent pool (initialized once at startup)
+_agent_pool = None
+
+def get_agent_pool():
+    """Get or create the global agent pool instance."""
+    global _agent_pool
+    if _agent_pool is None:
+        logger.info("Initializing global agent pool...")
+        _agent_pool = create_default_agent_pool()
+    return _agent_pool
 
 # ============================================================================
 # Pydantic Schemas
@@ -226,11 +238,14 @@ async def generate_scene(
             enable_caching=True
         )
 
+        # Get agent pool
+        agent_pool = get_agent_pool()
+
         # Initialize workflow engine and scene generation workflow
         engine = WorkflowEngine()
         workflow = SceneGenerationWorkflow(
             knowledge_router=knowledge_router,
-            agent_pool=None  # TODO: Initialize in next step
+            agent_pool=agent_pool
         )
 
         # Execute workflow
@@ -352,11 +367,14 @@ async def enhance_scene(
             enable_caching=True
         )
 
+        # Get agent pool
+        agent_pool = get_agent_pool()
+
         # Initialize workflow
         engine = WorkflowEngine()
         workflow = SceneEnhancementWorkflow(
             knowledge_router=knowledge_router,
-            agent_pool=None  # TODO: Initialize in next step
+            agent_pool=agent_pool
         )
 
         # Execute enhancement workflow
@@ -435,10 +453,13 @@ async def test_voice(
     Useful for determining which AI model best captures a character's voice.
     """
     try:
+        # Get agent pool
+        agent_pool = get_agent_pool()
+
         # Initialize workflow
         engine = WorkflowEngine()
         workflow = VoiceTestingWorkflow(
-            agent_pool=None  # TODO: Initialize in Session 5
+            agent_pool=agent_pool
         )
 
         # Execute voice testing workflow
