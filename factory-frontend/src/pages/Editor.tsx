@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { projectsApi } from '../api/factory';
 import type { Scene } from '../types';
+import { MarkdownEditor } from '../components/editor/MarkdownEditor';
 import {
   ArrowLeftIcon,
   BeakerIcon,
@@ -206,12 +207,17 @@ export default function Editor() {
               </div>
 
               {/* Editor */}
-              <div className="flex-1 overflow-y-auto bg-white p-8">
-                <textarea
-                  value={editingContent}
-                  onChange={(e) => handleContentChange(e.target.value)}
-                  className="w-full h-full min-h-[600px] border-0 resize-none focus:outline-none focus:ring-0 font-serif text-lg leading-relaxed"
-                  placeholder="Start writing..."
+              <div className="flex-1 overflow-hidden bg-white">
+                <MarkdownEditor
+                  content={editingContent}
+                  onChange={handleContentChange}
+                  onSave={handleSave}
+                  placeholder="Start writing your story..."
+                  autoSave={true}
+                  autoSaveDelay={2000}
+                  copilotEnabled={true}
+                  projectId={projectId}
+                  sceneId={selectedSceneId || undefined}
                 />
               </div>
             </>
