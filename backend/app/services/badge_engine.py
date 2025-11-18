@@ -451,7 +451,7 @@ Score:"""
             badge = Badge(
                 work_id=work.id,
                 badge_type=self.BADGE_HUMAN_SELF,
-                verified=True,
+                verified=False,  # Self-declared badges are NOT verified
                 metadata_json={
                     "confidence": confidence,
                     "note": "Self-certified by author"
