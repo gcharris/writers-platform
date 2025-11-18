@@ -190,14 +190,14 @@ async def get_graph_stats(
 
     # Get central entities
     central = kg.get_central_entities(top_n=10)
-    central_entities = [
-        {
+    central_entities = []
+    for entity_id, score in central:
+        entity = kg.get_entity(entity_id)
+        central_entities.append({
             "entity_id": entity_id,
-            "name": kg.get_entity(entity_id).name if kg.get_entity(entity_id) else entity_id,
+            "name": entity.name if entity else entity_id,
             "centrality": score
-        }
-        for entity_id, score in central
-    ]
+        })
 
     return {
         "entity_count": graph_record.entity_count,
@@ -576,8 +576,12 @@ async def find_path(
             "message": "No path found between entities"
         }
 
-    # Get entity details for path
-    path_entities = [kg.get_entity(eid).to_dict() for eid in path if kg.get_entity(eid)]
+    # Get entity details for path (avoid duplicate lookups)
+    path_entities = []
+    for eid in path:
+        entity = kg.get_entity(eid)
+        if entity:
+            path_entities.append(entity.to_dict())
 
     return {
         "found": True,
@@ -973,13 +977,10 @@ async def run_extraction_job(
 
     Timeout: 5 minutes per job to prevent runaway processes.
     """
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
+    from app.core.database import SessionLocal
     import asyncio
 
     # Create new DB session for background task
-    engine = create_engine(os.getenv('DATABASE_URL'))
-    SessionLocal = sessionmaker(bind=engine)
     db = SessionLocal()
 
     try:
@@ -990,10 +991,10 @@ async def run_extraction_job(
             return
 
         job.status = "running"
-        job.started_at = datetime.now()
+        job.started_at = datetime.utcnow()
         db.commit()
 
-        start_time = datetime.now()
+        start_time = datetime.utcnow()
 
         # Load existing graph
         graph_record = db.query(ProjectGraph).filter(
@@ -1070,7 +1071,7 @@ async def run_extraction_job(
         # Save graph back to database
         if graph_record:
             graph_record.graph_data = kg.to_json()
-            graph_record.last_updated = datetime.now()
+            graph_record.last_updated = datetime.utcnow()
             graph_record.last_extracted_scene = scene_id
             graph_record.entity_count = kg.metadata.entity_count
             graph_record.relationship_count = kg.metadata.relationship_count
@@ -1090,7 +1091,7 @@ async def run_extraction_job(
 
         # Update job status to completed
         job.status = "completed"
-        job.completed_at = datetime.now()
+        job.completed_at = datetime.utcnow()
         job.duration_seconds = (job.completed_at - job.started_at).total_seconds()
         job.entities_extracted = len(entities)
         job.relationships_extracted = len(relationships)
@@ -1111,7 +1112,7 @@ async def run_extraction_job(
         job = db.query(ExtractionJob).filter(ExtractionJob.id == job_id).first()
         if job:
             job.status = "failed"
-            job.completed_at = datetime.now()
+            job.completed_at = datetime.utcnow()
             if job.started_at:
                 job.duration_seconds = (job.completed_at - job.started_at).total_seconds()
             job.error_message = str(e)

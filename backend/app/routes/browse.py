@@ -47,7 +47,7 @@ async def browse_works(
 
     # Phase 2: Filter by badge type
     if badge_type:
-        query = query.join(Badge).filter(Badge.badge_type == badge_type)
+        query = query.join(Badge, Work.id == Badge.work_id).filter(Badge.badge_type == badge_type)
 
     # Apply filters
     if genre:

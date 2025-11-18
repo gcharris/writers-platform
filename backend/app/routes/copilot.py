@@ -435,16 +435,15 @@ async def copilot_stream(
 
         if not project:
             logger.warning(f"User {user.id} attempted to access unauthorized project {project_id}")
-            await websocket.close(code=1008, reason="Unauthorized")
+            # Cannot close WebSocket before accepting - just return
             return
 
     except WebSocketDisconnect:
-        # Authentication failed - close before accepting
-        await websocket.close(code=1008, reason="Authentication failed")
+        # Authentication failed - WebSocket already disconnected
         return
     except Exception as e:
         logger.error(f"WebSocket auth error: {e}", exc_info=True)
-        await websocket.close(code=1011, reason="Internal error")
+        # Cannot close before accepting
         return
 
     # Authentication successful - accept connection

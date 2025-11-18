@@ -160,9 +160,10 @@ async def extract_character_from_notebook(
                 db.flush()
 
             # Load knowledge graph
-            kg = KnowledgeGraphService(str(project_id))
             if project_graph.graph_data:
-                kg.load_from_json(json.dumps(project_graph.graph_data))
+                kg = KnowledgeGraphService.from_json(project_graph.graph_data)
+            else:
+                kg = KnowledgeGraphService(str(project_id))
 
             # Use LLM extractor to parse the profile into entities
             extractor = LLMExtractor(model="claude-sonnet-4.5")
@@ -202,8 +203,9 @@ async def extract_character_from_notebook(
 
                 else:
                     # New entity - create fresh
+                    from uuid import uuid4
                     entity = Entity(
-                        id=entity_dict.get("id", str(UUID(int=0))),  # Will generate new ID
+                        id=entity_dict.get("id", str(uuid4())),  # Generate proper UUID
                         name=entity_dict["name"],
                         entity_type=entity_dict.get("type", "character"),
                         description=entity_dict.get("description", ""),
@@ -297,9 +299,10 @@ async def extract_world_building_from_notebook(
                 db.flush()
 
             # Load knowledge graph
-            kg = KnowledgeGraphService(str(project_id))
             if project_graph.graph_data:
-                kg.load_from_json(json.dumps(project_graph.graph_data))
+                kg = KnowledgeGraphService.from_json(project_graph.graph_data)
+            else:
+                kg = KnowledgeGraphService(str(project_id))
 
             # Use LLM extractor
             extractor = LLMExtractor(model="claude-sonnet-4.5")
@@ -329,8 +332,9 @@ async def extract_world_building_from_notebook(
 
                 else:
                     # Create new entity
+                    from uuid import uuid4
                     entity = Entity(
-                        id=entity_dict.get("id", str(UUID(int=0))),
+                        id=entity_dict.get("id", str(uuid4())),  # Generate proper UUID
                         name=entity_dict["name"],
                         entity_type=entity_dict.get("type", "concept"),
                         description=entity_dict.get("description", ""),
