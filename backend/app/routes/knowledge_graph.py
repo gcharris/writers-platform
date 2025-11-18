@@ -947,8 +947,14 @@ async def run_extraction_job(
 
         elif extractor_type == "ner":
             # NER extraction (fast, no cost)
+            # Run sync NER extraction in thread pool to avoid blocking
+            import asyncio
             extractor = NERExtractor()
-            entities = extractor.extract_entities(scene_content, scene_id)
+            entities = await asyncio.to_thread(
+                extractor.extract_entities,
+                scene_content,
+                scene_id
+            )
             # NER doesn't extract relationships
 
         # Add entities to graph
