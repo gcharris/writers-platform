@@ -61,7 +61,15 @@ export const CopilotEditor: React.FC<CopilotEditorProps> = ({
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
     const wsUrl = apiUrl.replace('http://', 'ws://').replace('https://', 'wss://');
 
-    const ws = new WebSocket(`${wsUrl}/copilot/${projectId}/stream`);
+    // Get authentication token from localStorage
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      console.error('No auth token found - copilot requires authentication');
+      setCopilotStatus('disconnected');
+      return;
+    }
+
+    const ws = new WebSocket(`${wsUrl}/copilot/${projectId}/stream?token=${token}`);
 
     ws.onopen = () => {
       console.log('✅ Copilot connected');

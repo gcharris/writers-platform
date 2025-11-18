@@ -34,9 +34,18 @@ export const useKnowledgeGraphWebSocket = ({
   const connect = useCallback(() => {
     try {
       const token = localStorage.getItem('auth_token');
-      const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/knowledge-graph/projects/${projectId}/stream?token=${token}`;
 
-      const ws = new WebSocket(wsUrl);
+      // Get API URL from environment or construct from window.location
+      // Production: Different domains (Vercel frontend + Railway backend)
+      // Development: Same domain (localhost)
+      const apiUrl = import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.host}`;
+      const wsUrl = apiUrl
+        .replace('http://', 'ws://')
+        .replace('https://', 'wss://');
+
+      const fullWsUrl = `${wsUrl}/api/knowledge-graph/projects/${projectId}/stream?token=${token}`;
+
+      const ws = new WebSocket(fullWsUrl);
 
       ws.onopen = () => {
         console.log('Knowledge graph WebSocket connected');
@@ -100,7 +109,8 @@ export const useKnowledgeGraphWebSocket = ({
     return () => {
       disconnect();
     };
-  }, [connect, disconnect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]); // Only reconnect when projectId changes, not on every connect/disconnect change
 
   return {
     connected,
