@@ -18,6 +18,7 @@ import uuid
 from app.models.badge import Badge
 from app.models.work import Work
 from app.models.analysis_result import AnalysisResult
+from app.models.project import Project
 
 
 class BadgeEngine:
@@ -235,6 +236,65 @@ Score:"""
 
         return badge
 
+    def assign_badge_for_factory_work(
+        self,
+        work: Work,
+        factory_project: Project
+    ) -> Badge:
+        """
+        Assign AI-Analyzed badge to work published from Factory.
+
+        Automatically extracts analysis data from the Factory project.
+
+        Args:
+            work: Work model instance
+            factory_project: Source Factory project
+
+        Returns:
+            Created Badge instance
+        """
+        # Get latest analysis result from project
+        analysis = None
+        if hasattr(factory_project, 'analysis_results') and factory_project.analysis_results:
+            # Sort by created_at to get most recent
+            analysis = sorted(
+                factory_project.analysis_results,
+                key=lambda a: a.created_at,
+                reverse=True
+            )[0]
+
+        # Build metadata from analysis
+        metadata = {}
+        if analysis:
+            metadata = {
+                "score": getattr(analysis, 'best_score', None),
+                "best_agent": getattr(analysis, 'best_agent', None),
+                "hybrid_score": getattr(analysis, 'hybrid_score', None),
+                "models_used": ["claude", "gemini", "gpt", "grok", "deepseek"],
+                "factory_project_id": str(factory_project.id),
+                "analysis_cost": getattr(analysis, 'total_cost', 0.0),
+                "analysis_result_id": str(analysis.id) if hasattr(analysis, 'id') else None
+            }
+        else:
+            # No analysis found, but still assign ai_analyzed badge
+            # (work was created in Factory even if not analyzed)
+            metadata = {
+                "factory_project_id": str(factory_project.id),
+                "note": "Published from Factory (no analysis run)"
+            }
+
+        badge = Badge(
+            work_id=work.id,
+            badge_type=self.BADGE_AI_ANALYZED,
+            verified=True,
+            metadata_json=metadata
+        )
+
+        self.db.add(badge)
+        self.db.flush()  # Flush to get badge.id without committing
+
+        return badge
+
     async def assign_badge_human_verified(
         self,
         work_id: uuid.UUID,
@@ -329,6 +389,77 @@ Score:"""
         self.db.commit()
         self.db.refresh(badge)
 
+        return badge
+
+    async def assign_badge_for_upload(
+        self,
+        work: Work,
+        claim_human_authored: bool = False,
+        use_ai_detection: bool = True
+    ) -> Badge:
+        """
+        Assign appropriate badge for direct community upload based on AI detection.
+
+        This is the main method for uploads from the Community platform.
+
+        Args:
+            work: Work model instance
+            claim_human_authored: Whether author claims human authorship
+            use_ai_detection: Whether to use AI-based detection (costs $)
+
+        Returns:
+            Created Badge instance
+        """
+        if not claim_human_authored:
+            # User didn't claim human authorship - assign community_upload badge
+            return self.assign_badge_community_upload(work.id)
+
+        # User claims human authorship - run AI detection
+        is_ai, confidence = await self.detect_ai_authorship(work.content, use_ai_detection)
+
+        if is_ai:
+            # Detected as AI-generated despite claim
+            badge = Badge(
+                work_id=work.id,
+                badge_type=self.BADGE_COMMUNITY_UPLOAD,
+                verified=False,
+                metadata_json={
+                    "note": "AI authorship detected",
+                    "confidence": confidence,
+                    "detection_method": "ai" if use_ai_detection else "heuristic"
+                }
+            )
+            self.db.add(badge)
+            self.db.flush()
+            return badge
+
+        # Detected as human-authored
+        if confidence >= self.HUMAN_CONFIDENCE_THRESHOLD:
+            # High confidence - assign human_verified badge
+            badge = Badge(
+                work_id=work.id,
+                badge_type=self.BADGE_HUMAN_VERIFIED,
+                verified=True,
+                metadata_json={
+                    "confidence": confidence,
+                    "detection_model": "ai" if use_ai_detection else "heuristic",
+                    "note": "Verified via AI detection"
+                }
+            )
+        else:
+            # Medium confidence - assign human_self badge
+            badge = Badge(
+                work_id=work.id,
+                badge_type=self.BADGE_HUMAN_SELF,
+                verified=True,
+                metadata_json={
+                    "confidence": confidence,
+                    "note": "Self-certified by author"
+                }
+            )
+
+        self.db.add(badge)
+        self.db.flush()
         return badge
 
     def get_work_badges(self, work_id: uuid.UUID) -> List[Badge]:

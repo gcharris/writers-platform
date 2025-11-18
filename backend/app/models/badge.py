@@ -33,6 +33,10 @@ class Badge(Base):
     metadata_json = Column(JSON, default={})
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    work = relationship("Work", backref="badges")
+    work = relationship("Work", back_populates="badges")
+
+    def __repr__(self):
+        return f"<Badge {self.badge_type} for work {self.work_id}>"

@@ -4,6 +4,7 @@ from sqlalchemy import or_, and_, func
 from app.core.database import get_db
 from app.models.work import Work
 from app.models.user import User
+from app.models.badge import Badge
 from app.schemas.browse import (
     WorkListItem, BrowseFilters, BrowseResponse,
     SearchQuery, GenreStats
@@ -16,6 +17,7 @@ router = APIRouter(prefix="/browse", tags=["browse"])
 @router.get("/works", response_model=BrowseResponse)
 async def browse_works(
     genre: Optional[str] = None,
+    badge_type: Optional[str] = Query(None, description="Filter by badge type: ai_analyzed, human_verified, human_self, community_upload"),
     min_rating: Optional[float] = None,
     max_rating: Optional[float] = None,
     min_word_count: Optional[int] = None,
@@ -27,7 +29,11 @@ async def browse_works(
     page_size: int = 20,
     db: Session = Depends(get_db)
 ):
-    """Browse works with filters and pagination."""
+    """
+    Browse works with filters and pagination.
+
+    Phase 2: Added badge_type filter for discovering authentic content.
+    """
 
     # Build query
     query = db.query(Work).filter(
@@ -36,6 +42,10 @@ async def browse_works(
             Work.visibility == "public"
         )
     ).join(User, Work.author_id == User.id)
+
+    # Phase 2: Filter by badge type
+    if badge_type:
+        query = query.join(Badge).filter(Badge.badge_type == badge_type)
 
     # Apply filters
     if genre:

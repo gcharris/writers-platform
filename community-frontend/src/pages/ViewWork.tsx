@@ -4,7 +4,32 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { worksApi, commentsApi } from '../api/community';
 import { useAuthStore } from '../store/authStore';
 import Badge from '../components/Badge';
-import { ArrowLeftIcon, HeartIcon, EyeIcon, SparklesIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, HeartIcon, EyeIcon, SparklesIcon, ChatBubbleLeftIcon, CubeTransparentIcon } from '@heroicons/react/24/outline';
+
+// Phase 2: Import Knowledge Graph visualization from Factory
+// Note: This assumes both frontends are in the same monorepo
+// Alternative: Copy component to community-frontend or create shared package
+const GraphVisualization = ({ projectId }: { projectId: string }) => {
+  // Lazy load the actual component to avoid bundling issues
+  // In production, this would be a proper import or shared component
+  return (
+    <div className="bg-white rounded-lg p-8 text-center">
+      <CubeTransparentIcon className="h-16 w-16 mx-auto text-purple-300 mb-4" />
+      <p className="text-gray-600 mb-4">
+        Knowledge Graph visualization for this work.
+        View the full interactive graph at Writers Factory.
+      </p>
+      <a
+        href={`https://writersfactory.app/projects/${projectId}/knowledge-graph`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-block px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
+      >
+        Open Interactive Graph
+      </a>
+    </div>
+  );
+};
 
 export default function ViewWork() {
   const workIdParam = useParams();
@@ -14,6 +39,7 @@ export default function ViewWork() {
   const authStore = useAuthStore();
   const isAuthenticated = authStore.isAuthenticated;
   const [newComment, setNewComment] = useState('');
+  const [activeTab, setActiveTab] = useState<'read' | 'graph'>('read');
 
   const workQuery = useQuery({
     queryKey: ['work', workId],
@@ -132,22 +158,66 @@ export default function ViewWork() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Phase 2: Tabs for Read Story vs Knowledge Graph */}
+        {work.factory_project_id && (
+          <div className="mb-6 border-b border-gray-200">
+            <nav className="flex gap-8">
+              <button
+                onClick={() => setActiveTab('read')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'read'
+                    ? 'border-sky-500 text-sky-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Read Story
+              </button>
+              <button
+                onClick={() => setActiveTab('graph')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+                  activeTab === 'graph'
+                    ? 'border-purple-500 text-purple-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <CubeTransparentIcon className="h-4 w-4" />
+                Explore Knowledge Graph
+              </button>
+            </nav>
+          </div>
+        )}
+
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
-            {work.description && (
+            {/* Show description only in read tab */}
+            {activeTab === 'read' && work.description && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-2">About This Work</h2>
                 <p className="text-gray-700">{work.description}</p>
               </div>
             )}
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-              <div className="prose prose-lg max-w-none">
-                <div className="whitespace-pre-wrap font-serif text-gray-900 leading-relaxed">
-                  {work.content}
+            {/* Phase 2: Conditional rendering based on active tab */}
+            {activeTab === 'read' ? (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+                <div className="prose prose-lg max-w-none">
+                  <div className="whitespace-pre-wrap font-serif text-gray-900 leading-relaxed">
+                    {work.content}
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800">
+                    This knowledge graph was automatically generated from the author's manuscript using AI analysis.
+                    Explore characters, locations, and relationships visualized below.
+                  </p>
+                </div>
+
+                <GraphVisualization projectId={work.factory_project_id!} />
+              </div>
+            )}
 
             <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Comments ({comments?.length || 0})</h2>
