@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text, Integer, DateTime, ForeignKey, Float
+from sqlalchemy import Column, String, Text, Integer, DateTime, ForeignKey, Float, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -21,6 +21,16 @@ class Work(Base):
 
     # Sprint 3: Visibility control
     visibility = Column(String(20), default="public")  # public, private, unlisted
+
+    # Phase 2: Factory integration
+    factory_project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=True)
+    factory_scores = Column(JSON, nullable=True)
+    # factory_scores structure:
+    # {
+    #   "best_score": 65,
+    #   "hybrid_score": 68,
+    #   "total_cost": 0.42
+    # }
 
     # Sprint 2: Rating statistics
     rating_average = Column(Float, default=0.0)
@@ -46,3 +56,7 @@ class Work(Base):
     # Sprint 3: Discovery relationships
     bookmarks = relationship("Bookmark", back_populates="work", cascade="all, delete-orphan")
     reading_history = relationship("ReadingHistory", back_populates="work", cascade="all, delete-orphan")
+
+    # Phase 2: Factory integration
+    factory_project = relationship("Project", backref="published_works")
+    badges = relationship("Badge", back_populates="work", cascade="all, delete-orphan")

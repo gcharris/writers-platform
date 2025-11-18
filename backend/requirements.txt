@@ -47,9 +47,12 @@ google-auth>=2.23.0
 python-dotenv>=1.0.0
 
 # ============================================
-# Graph Analysis (lightweight alternative to cognee)
+# Knowledge Graph & NLP (for entity extraction)
 # ============================================
-networkx>=3.0  # For graph analysis
+networkx>=3.2  # For graph analysis and visualization
+spacy>=3.7.0  # For NER-based entity extraction (fast, local)
+# Note: spaCy language model must be downloaded separately:
+# python -m spacy download en_core_web_sm
 
 # ============================================
 # File Processing
@@ -69,6 +72,11 @@ charset-normalizer>=3.0.0  # Text encoding detection
 # ============================================
 # Using existing AI SDKs for detection (anthropic, openai)
 # Custom implementation using Claude/GPT for content analysis
+
+# ============================================
+# Error Monitoring & Observability
+# ============================================
+sentry-sdk[fastapi]>=1.40.0  # Production error tracking and monitoring
 
 # ============================================
 # REMOVED FOR DEPLOYMENT OPTIMIZATION:

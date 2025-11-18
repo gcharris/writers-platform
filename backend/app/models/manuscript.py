@@ -25,7 +25,7 @@ class ManuscriptAct(Base):
     act_number = Column(Integer, nullable=False)
     title = Column(String(255), nullable=False)
     notes = Column(Text, default="")
-    metadata = Column(JSONB, default=dict)
+    metadata_json = Column(JSONB, default=dict)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -52,7 +52,7 @@ class ManuscriptChapter(Base):
     chapter_number = Column(Integer, nullable=False)
     title = Column(String(255), nullable=False)
     notes = Column(Text, default="")
-    metadata = Column(JSONB, default=dict)
+    metadata_json = Column(JSONB, default=dict)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -81,7 +81,7 @@ class ManuscriptScene(Base):
     content = Column(Text, default="")  # The actual prose
     word_count = Column(Integer, default=0)
     notes = Column(Text, default="")
-    metadata = Column(JSONB, default=dict)  # Generation context, prompts, models used, etc.
+    metadata_json = Column(JSONB, default=dict)  # Generation context, prompts, models used, etc.
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -110,7 +110,7 @@ class ReferenceFile(Base):
     filename = Column(String(255), nullable=False)
     content = Column(Text, default="")  # Markdown content
     word_count = Column(Integer, default=0)
-    metadata = Column(JSONB, default=dict)  # Tags, source (NotebookLM URL, etc.), version info
+    metadata_json = Column(JSONB, default=dict)  # Tags, source (NotebookLM URL, etc.), version info
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

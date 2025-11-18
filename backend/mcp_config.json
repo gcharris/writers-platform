@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "notebooklm": {
+      "command": "node",
+      "args": [
+        "external/notebooklm-mcp/index.js"
+      ],
+      "env": {
+        "NOTEBOOKLM_API_KEY": "${NOTEBOOKLM_API_KEY}"
+      }
+    }
+  }
+}

@@ -85,11 +85,47 @@ export default function Upload() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Share Your Work</h1>
           <p className="text-gray-600 mt-1">
-            Upload your manuscript to Writers Community
+            Upload your manuscript or write with FREE AI assistance
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+        {/* Phase 2: FREE Copilot Option */}
+        <div className="bg-gradient-to-br from-purple-50 via-blue-50 to-sky-50 border-2 border-purple-200 rounded-2xl p-6 mb-6">
+          <div className="flex items-start gap-4">
+            <SparklesIcon className="h-10 w-10 text-purple-600 flex-shrink-0" />
+            <div className="flex-1">
+              <h2 className="text-xl font-bold text-gray-900 mb-2">
+                ✨ NEW: Write with FREE AI Copilot
+              </h2>
+              <p className="text-gray-700 mb-4">
+                Get real-time AI suggestions as you write! Our FREE copilot helps you craft better sentences,
+                develop characters, and maintain consistency - all powered by local Ollama (no API costs).
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <a
+                  href="https://writersfactory.app/new"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  <SparklesIcon className="h-5 w-5" />
+                  Start Writing with Copilot
+                </a>
+                <button
+                  className="px-6 py-3 bg-white text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors border border-gray-300"
+                  onClick={() => {
+                    const element = document.getElementById('upload-section');
+                    element?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  Or Upload Existing File
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="upload-section" className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
           {/* File drop zone */}
           {!selectedFile ? (
             <div

@@ -7,6 +7,7 @@ import type {
   WorkUpload,
   Comment,
   BrowseFilters,
+  EntitySearchParams,
 } from '../types';
 
 // Auth API
@@ -32,6 +33,11 @@ export const worksApi = {
   browse: async (filters?: BrowseFilters): Promise<Work[]> => {
     const response = await apiClient.get('/works/', { params: filters });
     return response.data;
+  },
+
+  browseByEntity: async (params: EntitySearchParams): Promise<Work[]> => {
+    const response = await apiClient.get('/browse/by-entity', { params });
+    return response.data.works || response.data;
   },
 
   get: async (id: string): Promise<Work> => {

@@ -37,6 +37,13 @@ class Project(Base):
     # Settings
     settings = Column(JSON, default={})  # Project-specific settings
 
+    # NotebookLM Integration (Phase 9)
+    notebooklm_notebooks = Column(JSON, default=dict, nullable=True)
+    # Structure: {"character_research": "url", "world_building": "url", "themes": "url"}
+
+    notebooklm_config = Column(JSON, default=dict, nullable=True)
+    # Structure: {"enabled": bool, "auto_query_on_copilot": bool, "configured_at": str}
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -48,3 +55,6 @@ class Project(Base):
     # Manuscript structure (from factory-core integration)
     manuscript_acts = relationship("ManuscriptAct", back_populates="project", cascade="all, delete-orphan", order_by="ManuscriptAct.act_number")
     reference_files = relationship("ReferenceFile", back_populates="project", cascade="all, delete-orphan")
+
+    # Knowledge Graph
+    knowledge_graph = relationship("ProjectGraph", back_populates="project", uselist=False, cascade="all, delete-orphan")

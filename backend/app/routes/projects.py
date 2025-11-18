@@ -148,8 +148,7 @@ async def upload_project(
     # Create scenes from chapters
     scenes_created = 0
     for chapter in parsed.get('chapters', []):
-        # Split chapter into scenes if needed
-        from app.services.file_parser import FileParser
+        # Split chapter into scenes if needed (FileParser already imported at top)
         chapter_scenes = FileParser.split_into_scenes(chapter['content'])
 
         for scene_data in chapter_scenes:

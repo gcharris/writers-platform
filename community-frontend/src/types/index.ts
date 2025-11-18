@@ -90,3 +90,15 @@ export interface BrowseFilters {
   search?: string;
   sort_by?: 'recent' | 'popular' | 'liked';
 }
+
+// Entity search parameters
+export interface EntitySearchParams {
+  entity_name: string;
+  entity_type?: string;
+  genre?: string;
+  min_rating?: number;
+  sort_by?: string;
+  sort_order?: string;
+  page?: number;
+  page_size?: number;
+}

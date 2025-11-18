@@ -1,9 +1,30 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 
 from app.core.config import settings
 from app.core.database import Base, engine
-from app.routes import auth, works, reading, comments, ratings, browse, profile, engagement, notifications, dashboard, reading_lists, professional, factory, events, projects, analysis, workflows
+from app.routes import auth, works, reading, comments, ratings, browse, profile, engagement, notifications, dashboard, reading_lists, professional, factory, events, projects, analysis, workflows, knowledge_graph, copilot, notebooklm
+
+# Initialize Sentry for error monitoring
+if settings.SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        environment=settings.SENTRY_ENVIRONMENT,
+        traces_sample_rate=settings.SENTRY_TRACES_SAMPLE_RATE,
+        profiles_sample_rate=0.1,  # Profile 10% of transactions
+        integrations=[
+            FastApiIntegration(transaction_style="endpoint"),
+            SqlalchemyIntegration(),
+        ],
+        # Send traces for these operations
+        send_default_pii=False,  # Don't send personal data by default
+        attach_stacktrace=True,
+        # Release tracking
+        release=f"writers-platform@{settings.VERSION}",
+    )
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -57,6 +78,12 @@ app.include_router(events.router, prefix=settings.API_PREFIX)
 app.include_router(projects.router, prefix=settings.API_PREFIX)
 app.include_router(analysis.router, prefix=settings.API_PREFIX)
 app.include_router(workflows.router, prefix=settings.API_PREFIX)
+# Knowledge Graph
+app.include_router(knowledge_graph.router, prefix=settings.API_PREFIX)
+# AI Copilot
+app.include_router(copilot.router, prefix=settings.API_PREFIX)
+# NotebookLM MCP Integration (Phase 9)
+app.include_router(notebooklm.router, prefix=settings.API_PREFIX)
 
 @app.get("/")
 async def root():

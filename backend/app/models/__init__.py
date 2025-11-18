@@ -19,6 +19,7 @@ from app.models.scene import Scene
 from app.models.analysis_result import AnalysisResult
 from app.models.badge import Badge
 from app.models.manuscript import ManuscriptAct, ManuscriptChapter, ManuscriptScene, ReferenceFile
+from app.models.knowledge_graph import ProjectGraph, ExtractionJob
 
 __all__ = [
     "User",
@@ -46,4 +47,7 @@ __all__ = [
     "ManuscriptChapter",
     "ManuscriptScene",
     "ReferenceFile",
+    # Knowledge graph models
+    "ProjectGraph",
+    "ExtractionJob",
 ]
