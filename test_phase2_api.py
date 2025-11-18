@@ -135,7 +135,7 @@ async def test_badge_assignment(db: Session):
         test_user = User(
             email="test@example.com",
             username="test_user",
-            hashed_password="fake_hash_for_testing"
+            password_hash="fake_hash_for_testing"
         )
         db.add(test_user)
         db.commit()
