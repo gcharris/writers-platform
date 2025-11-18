@@ -11,6 +11,8 @@ export { AnalyticsDashboard } from './AnalyticsDashboard';
 export { ExportImport } from './ExportImport';
 export { LiveGraphUpdates } from './LiveGraphUpdates';
 export { ExtractionJobMonitor } from './ExtractionJobMonitor';
+export { KnowledgeContextPanel } from './KnowledgeContextPanel';
+export { GraphPoweredSearch } from './GraphPoweredSearch';
 
 export { default as GraphVisualizationDefault } from './GraphVisualization';
 export { default as EntityBrowserDefault } from './EntityBrowser';
@@ -20,3 +22,5 @@ export { default as AnalyticsDashboardDefault } from './AnalyticsDashboard';
 export { default as ExportImportDefault } from './ExportImport';
 export { default as LiveGraphUpdatesDefault } from './LiveGraphUpdates';
 export { default as ExtractionJobMonitorDefault } from './ExtractionJobMonitor';
+export { default as KnowledgeContextPanelDefault } from './KnowledgeContextPanel';
+export { default as GraphPoweredSearchDefault } from './GraphPoweredSearch';
