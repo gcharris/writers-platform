@@ -176,6 +176,68 @@ export const EntityDetails: React.FC<EntityDetailsProps> = ({
             </div>
           )}
 
+          {/* 📚 Research Citations (NotebookLM Sources) */}
+          {entity.properties?.notebooklm_sources && entity.properties.notebooklm_sources.length > 0 && (
+            <div className="bg-gradient-to-br from-blue-900/30 to-purple-900/30 border border-blue-700 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="text-sm font-semibold text-blue-300">
+                  📚 Research Citations
+                </h3>
+                <span className="text-xs text-gray-400">from NotebookLM</span>
+              </div>
+              <p className="text-xs text-gray-400 mb-3">
+                This entity was grounded in research from the following sources:
+              </p>
+              <div className="space-y-2">
+                {entity.properties.notebooklm_sources.slice(0, 5).map((source: any, index: number) => (
+                  <div key={index} className="bg-gray-800/50 rounded p-3 border border-gray-700">
+                    <div className="flex items-start gap-2">
+                      <span className="text-blue-400 text-xs font-mono mt-0.5">[{index + 1}]</span>
+                      <div className="flex-1">
+                        {source.url ? (
+                          <a
+                            href={source.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 hover:text-blue-300 text-sm font-medium underline break-all"
+                          >
+                            {source.title || source.url}
+                          </a>
+                        ) : (
+                          <p className="text-gray-300 text-sm font-medium">
+                            {source.title || 'Untitled Source'}
+                          </p>
+                        )}
+                        {source.snippet && (
+                          <p className="text-xs text-gray-400 mt-1 line-clamp-2">
+                            {source.snippet}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {entity.properties.notebooklm_sources.length > 5 && (
+                  <p className="text-xs text-gray-400 italic">
+                    +{entity.properties.notebooklm_sources.length - 5} more sources
+                  </p>
+                )}
+              </div>
+              {entity.properties?.notebooklm_notebook_id && (
+                <div className="mt-3 pt-3 border-t border-gray-700">
+                  <p className="text-xs text-gray-500">
+                    Extracted from NotebookLM notebook: {entity.properties.notebooklm_notebook_id}
+                  </p>
+                </div>
+              )}
+              {entity.properties?.enriched_from_notebooklm && (
+                <div className="mt-2 text-xs text-green-400 flex items-center gap-1">
+                  ✓ <span>Enriched with research data</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Appearances */}
           {entity.appearances && entity.appearances.length > 0 && (
             <div>
