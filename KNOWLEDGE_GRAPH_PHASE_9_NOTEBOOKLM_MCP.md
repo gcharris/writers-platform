@@ -11,12 +11,39 @@
 
 > "This is basically for the initial beginning writer + later on when the writer is brainstorming and looking for more ideas about character + world building. For example, they could ask the agent to query one of notebooks in Notebook LM... The idea is for the writer to build up a bunch of information in notebooks before they start and part of the initial process. Is the agent inside the factory querying different notebooks through the notebook lmmcp server which is already configured in the writers factory, And start building the characters, the plot, the conflicts etc."
 
-**Workflow**:
-1. **Pre-writing Phase**: Writer curates research in NotebookLM notebooks (YouTube videos, articles, Mo Gawdat interviews, etc.)
-2. **Brainstorming Phase**: Writer uses factory agents to query NotebookLM: "How would Mo Gawdat describe the world in 10 years?"
-3. **Character Building**: Agent extracts character profiles, voice, backstory from NotebookLM research
-4. **Knowledge Graph Integration**: Auto-extract entities from NotebookLM responses into knowledge graph
-5. **Plot Development**: Build conflicts, themes, arcs from writer's curated research
+**Correct Workflow**:
+
+1. **Pre-Platform Setup** (Writer does this BEFORE joining platform):
+   - Writer creates multiple NotebookLM notebooks externally
+   - Each notebook has specific purpose:
+     - "Character Research" notebook (personality studies, interviews, voice examples)
+     - "World Building" notebook (future tech, social trends, setting research)
+     - "Themes & Philosophy" notebook (ethical frameworks, philosophical concepts)
+   - Writer curates sources in each notebook (YouTube videos, articles, PDFs)
+
+2. **Platform Onboarding** (Wizard/AI Assistant guides writer):
+   - **Wizard asks**: "Have you prepared NotebookLM notebooks for your project?"
+   - **Writer provides URLs**:
+     - Character Research: `https://notebooklm.google.com/notebook/abc123`
+     - World Building: `https://notebooklm.google.com/notebook/def456`
+     - Themes: `https://notebooklm.google.com/notebook/ghi789`
+   - **Platform stores** URLs in project configuration
+   - **MCP server connects** to notebooks automatically
+
+3. **During Writing** (Agent-driven automatic queries):
+   - Writer starts brainstorming phase in wizard
+   - **Agents automatically query** configured notebooks:
+     - Character building → queries "Character Research" notebook
+     - World building → queries "World Building" notebook
+     - Theme development → queries "Themes" notebook
+   - **Agents extract** entities from responses
+   - **Auto-add** to knowledge graph with citations
+   - **No manual intervention** - agents decide when/what to query
+
+4. **Knowledge Graph Integration**:
+   - All NotebookLM-sourced entities tagged with source notebook
+   - Citations link back to original sources (YouTube timestamps, article sections)
+   - Writers see research-grounded suggestions in context panel
 
 ---
 
@@ -59,10 +86,11 @@ async def export_to_notebooklm(project_id: str):
 ### ❌ What's Missing
 
 1. **MCP Server Integration**: No client to communicate with NotebookLM MCP server
-2. **Query Interface**: No API endpoint to query NotebookLM notebooks
-3. **Auto-Extraction from Responses**: NotebookLM query results not fed into knowledge graph
-4. **Agent Integration**: Factory agents can't automatically query NotebookLM during character/world building
-5. **Multi-Notebook Support**: Can't configure multiple notebooks per project
+2. **Wizard Integration**: No onboarding step to collect NotebookLM URLs
+3. **URL-based Storage**: Need to store multiple notebook URLs per project (character research, world building, themes)
+4. **Agent Auto-Query**: Factory agents can't automatically query notebooks during brainstorming
+5. **Agent Intelligence**: Agents don't know which notebook to query for which purpose (character vs world vs theme)
+6. **Auto-Extraction from Responses**: NotebookLM query results not fed into knowledge graph
 
 ---
 
@@ -561,7 +589,7 @@ async def get_project_notebooks(
 
 **File**: `backend/app/models/project.py`
 
-Add NotebookLM configuration fields:
+Add NotebookLM configuration fields for URL-based storage with typed notebooks:
 
 ```python
 class Project(Base):
@@ -569,20 +597,32 @@ class Project(Base):
 
     # ... existing fields ...
 
-    # NotebookLM integration
-    notebooklm_notebook_ids: List[str] = Column(
-        ARRAY(String),
-        default=list,
+    # NotebookLM integration - URL-based storage
+    notebooklm_notebooks: Dict = Column(
+        JSON,
+        default=dict,
         nullable=True,
-        comment="List of NotebookLM notebook IDs for this project"
+        comment="NotebookLM notebook URLs by type"
     )
+    # Example structure:
+    # {
+    #   "character_research": "https://notebooklm.google.com/notebook/abc123",
+    #   "world_building": "https://notebooklm.google.com/notebook/def456",
+    #   "themes": "https://notebooklm.google.com/notebook/ghi789"
+    # }
 
     notebooklm_config: Dict = Column(
         JSON,
         default=dict,
         nullable=True,
-        comment="NotebookLM configuration (auto_extract, sync_interval, etc.)"
+        comment="NotebookLM configuration (auto_extract, enabled, etc.)"
     )
+    # Example structure:
+    # {
+    #   "enabled": true,
+    #   "auto_extract_on_brainstorm": true,
+    #   "last_synced": "2025-01-18T12:00:00Z"
+    # }
 ```
 
 **Migration**: `backend/migrations/add_notebooklm_to_projects.sql`
@@ -590,19 +630,226 @@ class Project(Base):
 ```sql
 -- Add NotebookLM fields to projects table
 ALTER TABLE projects
-ADD COLUMN IF NOT EXISTS notebooklm_notebook_ids TEXT[] DEFAULT '{}',
-ADD COLUMN IF NOT EXISTS notebooklm_config JSONB DEFAULT '{}';
+ADD COLUMN IF NOT EXISTS notebooklm_notebooks JSONB DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS notebooklm_config JSONB DEFAULT '{"enabled": false}';
 
--- Add comment
-COMMENT ON COLUMN projects.notebooklm_notebook_ids IS
-  'List of NotebookLM notebook IDs for research integration';
+-- Add comments
+COMMENT ON COLUMN projects.notebooklm_notebooks IS
+  'NotebookLM notebook URLs by type (character_research, world_building, themes)';
 COMMENT ON COLUMN projects.notebooklm_config IS
-  'NotebookLM configuration (auto_extract, sync_interval, etc.)';
+  'NotebookLM configuration (enabled, auto_extract_on_brainstorm, last_synced)';
+
+-- Create index for fast lookups
+CREATE INDEX IF NOT EXISTS idx_projects_notebooklm_enabled
+ON projects ((notebooklm_config->>'enabled'));
 ```
 
 ---
 
-### Step 5: Frontend UI (1.5 hours)
+### Step 5: Wizard Integration (1 hour)
+
+**File**: `backend/app/routes/wizard.py` (or create new wizard endpoint)
+
+Add onboarding step to collect NotebookLM URLs:
+
+```python
+@router.post("/projects/{project_id}/onboarding/notebooklm")
+async def configure_notebooklm_notebooks(
+    project_id: str,
+    character_research_url: Optional[str] = None,
+    world_building_url: Optional[str] = None,
+    themes_url: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Configure NotebookLM notebooks for project during onboarding wizard.
+
+    Args:
+        project_id: UUID of the project
+        character_research_url: URL to character research notebook
+        world_building_url: URL to world building notebook
+        themes_url: URL to themes/philosophy notebook
+
+    Returns:
+        Updated project configuration
+    """
+    project = db.query(Project).filter(
+        Project.id == project_id,
+        Project.user_id == current_user.id
+    ).first()
+
+    if not project:
+        raise HTTPException(404, "Project not found")
+
+    # Update notebook URLs
+    notebooklm_notebooks = {}
+    if character_research_url:
+        notebooklm_notebooks["character_research"] = character_research_url
+    if world_building_url:
+        notebooklm_notebooks["world_building"] = world_building_url
+    if themes_url:
+        notebooklm_notebooks["themes"] = themes_url
+
+    project.notebooklm_notebooks = notebooklm_notebooks
+
+    # Enable NotebookLM if at least one notebook provided
+    if notebooklm_notebooks:
+        project.notebooklm_config = {
+            "enabled": True,
+            "auto_extract_on_brainstorm": True,
+            "last_configured": datetime.utcnow().isoformat()
+        }
+
+    db.commit()
+
+    return {
+        "success": True,
+        "notebooks_configured": len(notebooklm_notebooks),
+        "notebooklm_enabled": bool(notebooklm_notebooks)
+    }
+```
+
+**Frontend Wizard Component**: `factory-frontend/src/components/wizard/NotebookLMSetup.tsx`
+
+```typescript
+/**
+ * Wizard step for configuring NotebookLM notebooks during onboarding
+ */
+import React, { useState } from 'react';
+
+interface NotebookLMSetupProps {
+  projectId: string;
+  onComplete: () => void;
+  onSkip: () => void;
+}
+
+export const NotebookLMSetup: React.FC<NotebookLMSetupProps> = ({
+  projectId,
+  onComplete,
+  onSkip,
+}) => {
+  const [characterUrl, setCharacterUrl] = useState('');
+  const [worldUrl, setWorldUrl] = useState('');
+  const [themesUrl, setThemesUrl] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await fetch(`/api/projects/${projectId}/onboarding/notebooklm`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          character_research_url: characterUrl || null,
+          world_building_url: worldUrl || null,
+          themes_url: themesUrl || null
+        })
+      });
+      onComplete();
+    } catch (error) {
+      console.error('Failed to save notebooks:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 max-w-2xl">
+      <div>
+        <h2 className="text-2xl font-bold text-white mb-2">
+          Connect Your Research
+        </h2>
+        <p className="text-gray-400">
+          Have you prepared NotebookLM notebooks with research for your project?
+          Connect them here so our AI agents can help build your characters and world.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Character Research Notebook (Optional)
+          </label>
+          <p className="text-xs text-gray-500 mb-2">
+            Interviews, personality studies, voice examples for character inspiration
+          </p>
+          <input
+            type="url"
+            value={characterUrl}
+            onChange={(e) => setCharacterUrl(e.target.value)}
+            placeholder="https://notebooklm.google.com/notebook/..."
+            className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            World Building Notebook (Optional)
+          </label>
+          <p className="text-xs text-gray-500 mb-2">
+            Future tech, social trends, setting research, world details
+          </p>
+          <input
+            type="url"
+            value={worldUrl}
+            onChange={(e) => setWorldUrl(e.target.value)}
+            placeholder="https://notebooklm.google.com/notebook/..."
+            className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Themes & Philosophy Notebook (Optional)
+          </label>
+          <p className="text-xs text-gray-500 mb-2">
+            Ethical frameworks, philosophical concepts, story themes
+          </p>
+          <input
+            type="url"
+            value={themesUrl}
+            onChange={(e) => setThemesUrl(e.target.value)}
+            placeholder="https://notebooklm.google.com/notebook/..."
+            className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded text-white"
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-4">
+        <button
+          onClick={handleSave}
+          disabled={saving || (!characterUrl && !worldUrl && !themesUrl)}
+          className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+        >
+          {saving ? 'Saving...' : 'Save & Continue'}
+        </button>
+        <button
+          onClick={onSkip}
+          className="px-6 py-2 bg-gray-700 text-white rounded hover:bg-gray-600"
+        >
+          Skip for Now
+        </button>
+      </div>
+
+      <div className="p-4 bg-blue-900/20 border border-blue-800 rounded">
+        <p className="text-sm text-blue-300">
+          💡 <strong>Tip:</strong> You can add notebooks later in Project Settings.
+          The AI will automatically query these notebooks when helping you brainstorm
+          characters, build your world, and develop themes.
+        </p>
+      </div>
+    </div>
+  );
+};
+```
+
+---
+
+### Step 6: Agent Auto-Query Integration (1.5 hours)
 
 **File**: `factory-frontend/src/components/notebooklm/NotebookSelector.tsx`
 
@@ -980,27 +1227,39 @@ Writers can:
 
 ## User Workflow Example
 
-**Before Writing** (Pre-writing Research):
-1. Writer creates NotebookLM notebook: "AI in 2035"
-2. Adds sources: Mo Gawdat YouTube videos, articles, interviews
-3. Configures notebook in Writers Platform project settings
+**Phase 1: Pre-Platform Research** (Outside the platform):
+1. Writer creates 3 NotebookLM notebooks externally:
+   - "Character Research" - adds interviews, personality studies, voice examples
+   - "World Building" - adds future tech articles, social trend videos, setting research
+   - "Themes & Philosophy" - adds ethical frameworks, philosophical discussions
+2. Writer curates high-quality sources (YouTube videos, articles, PDFs, etc.)
 
-**During Brainstorming**:
-1. Writer opens Character Extractor
-2. Asks: "Extract character profile for 'Mo Gawdat-inspired AI ethicist'"
-3. NotebookLM MCP queries notebook with prompt
-4. Response includes backstory, voice, beliefs, arc (with citations)
-5. Entities auto-extracted and added to knowledge graph:
-   - Character: "Dr. Eli Thorne" (AI ethicist)
-   - Concept: "Compassionate AI"
-   - Theme: "Human-AI symbiosis"
-   - Relationships: "Dr. Thorne advocates_for Compassionate AI"
+**Phase 2: Platform Onboarding** (Wizard setup):
+1. Writer creates new project in Writers Platform
+2. Wizard asks: "Have you prepared NotebookLM notebooks for research?"
+3. Writer provides URLs:
+   - Character: `https://notebooklm.google.com/notebook/char123`
+   - World: `https://notebooklm.google.com/notebook/world456`
+   - Themes: `https://notebooklm.google.com/notebook/theme789`
+4. Platform stores URLs and enables auto-query
 
-**During Writing**:
-1. Writer starts scene with Dr. Thorne
-2. Knowledge graph shows related entities and relationships
-3. Context panel shows NotebookLM sources for character voice
-4. Writer crafts authentic dialogue grounded in research
+**Phase 3: Brainstorming** (Agent-driven automatic queries):
+1. Writer enters brainstorming phase in wizard
+2. **Agent automatically queries character notebook**: "Extract character profiles from research"
+3. **Agent automatically queries world notebook**: "Extract world-building elements"
+4. **Agent automatically queries themes notebook**: "Extract key themes and conflicts"
+5. **All entities auto-added to knowledge graph** with citations:
+   - Characters with backstories and voice patterns
+   - Locations and technologies
+   - Concepts and themes
+   - Relationships between entities
+
+**Phase 4: Writing** (Research-grounded creation):
+1. Writer starts writing scenes
+2. Knowledge graph shows all research-based entities
+3. Context panel displays NotebookLM citations when relevant
+4. Writer crafts authentic content grounded in curated research
+5. No manual extraction needed - agents already built the foundation
 
 ---
 
