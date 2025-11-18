@@ -53,12 +53,14 @@ class WritingContextManager:
         - Scene location and setting
         - Previous paragraph for continuity
         - POV character
+        - NotebookLM research context (Phase 9)
         """
         context = {
             "previous_text": self._get_previous_context(current_text, cursor_position),
             "entities": await self._get_mentioned_entities(project_id, current_text),
             "project_info": await self._get_project_info(project_id),
             "tone": self._analyze_tone(current_text),
+            "notebooklm_context": await self._get_notebooklm_context(project_id, current_text),  # NEW
         }
 
         return context
@@ -142,6 +144,88 @@ class WritingContextManager:
         else:
             return "neutral"
 
+    async def _get_notebooklm_context(self, project_id: UUID, text: str) -> Dict:
+        """
+        Query NotebookLM notebooks for relevant research based on current text.
+
+        Phase 9: NotebookLM MCP Integration
+        This enhances copilot suggestions with research-grounded context.
+
+        Example: If writing about "AI in 2035", query world-building notebook
+        """
+        try:
+            # Get project's NotebookLM configuration
+            project = self.db.query(Project).filter(Project.id == project_id).first()
+
+            if not project or not project.notebooklm_notebooks:
+                return {}
+
+            # Check if NotebookLM auto-query is enabled
+            config = project.notebooklm_config or {}
+            if not config.get("auto_query_on_copilot", True):
+                return {}
+
+            # Get mentioned entities to determine what to query
+            mentioned_entities = await self._get_mentioned_entities(project_id, text)
+
+            if not mentioned_entities:
+                return {}
+
+            # Query NotebookLM based on entity types
+            from app.services.notebooklm import get_mcp_client
+            client = get_mcp_client()
+
+            # Check if MCP server is available
+            if not await client.is_available():
+                return {}
+
+            notebooklm_context = {}
+
+            # If character mentioned, query character research notebook
+            characters = [e for e in mentioned_entities if e["type"] == "character"]
+            if characters and "character_research" in project.notebooklm_notebooks:
+                try:
+                    # Query for first mentioned character
+                    entity_name = characters[0]["name"]
+                    response = await client.query_for_context(
+                        notebook_id=project.notebooklm_notebooks["character_research"],
+                        entity_name=entity_name,
+                        entity_type="character"
+                    )
+
+                    if response:
+                        notebooklm_context["character_research"] = {
+                            "entity": entity_name,
+                            "context": response[:300]  # Limit length for copilot
+                        }
+                except Exception as e:
+                    logger.error(f"Error querying character research: {e}")
+
+            # If location/technology mentioned, query world-building notebook
+            locations = [e for e in mentioned_entities if e["type"] in ["location", "object", "concept"]]
+            if locations and "world_building" in project.notebooklm_notebooks:
+                try:
+                    entity_name = locations[0]["name"]
+                    response = await client.query_for_context(
+                        notebook_id=project.notebooklm_notebooks["world_building"],
+                        entity_name=entity_name,
+                        entity_type=locations[0]["type"]
+                    )
+
+                    if response:
+                        notebooklm_context["world_building"] = {
+                            "entity": entity_name,
+                            "context": response[:300]
+                        }
+                except Exception as e:
+                    logger.error(f"Error querying world building: {e}")
+
+            return notebooklm_context
+
+        except Exception as e:
+            logger.error(f"Error getting NotebookLM context: {e}")
+            return {}
+
 
 # ============================================================================
 # Suggestion Engine
@@ -199,13 +283,22 @@ class SuggestionEngine:
             return None
 
     def _build_suggestion_prompt(self, text: str, context: Dict, suggestion_type: str) -> str:
-        """Build context-aware prompt for suggestion generation"""
+        """Build context-aware prompt for suggestion generation (Phase 9: includes NotebookLM research)"""
 
         entities_text = ""
         if context.get("entities"):
             entities_text = "\n\nCharacters/entities mentioned:\n"
             for entity in context["entities"][:5]:
                 entities_text += f"- {entity['name']} ({entity['type']}): {entity.get('description', '')}\n"
+
+        # NEW: Add NotebookLM research context
+        notebooklm_text = ""
+        if context.get("notebooklm_context"):
+            notebooklm_text = "\n\nResearch context from notebooks:\n"
+            for key, value in context["notebooklm_context"].items():
+                entity_name = value.get("entity", "")
+                research_context = value.get("context", "")
+                notebooklm_text += f"- {key.replace('_', ' ').title()} ({entity_name}): {research_context}\n"
 
         project_info = context.get("project_info", {})
         genre = project_info.get("genre", "fiction")
@@ -217,15 +310,17 @@ class SuggestionEngine:
 Project: {project_info.get('title', 'Untitled')}
 Current tone: {tone}
 {entities_text}
+{notebooklm_text}
 
 Task: Continue the text naturally, matching the established voice and style.
 
 Guidelines:
 1. Match the existing tone and pacing
 2. Stay consistent with character voices
-3. Keep suggestions concise (1-2 sentences max)
-4. Be creative but maintain story continuity
-5. Don't repeat what's already written
+3. Use research context to ground suggestions in reality
+4. Keep suggestions concise (1-2 sentences max)
+5. Be creative but maintain story continuity
+6. Don't repeat what's already written
 
 Continue the text smoothly from where it left off:"""
 

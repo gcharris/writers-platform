@@ -37,6 +37,13 @@ class Project(Base):
     # Settings
     settings = Column(JSON, default={})  # Project-specific settings
 
+    # NotebookLM Integration (Phase 9)
+    notebooklm_notebooks = Column(JSON, default=dict, nullable=True)
+    # Structure: {"character_research": "url", "world_building": "url", "themes": "url"}
+
+    notebooklm_config = Column(JSON, default=dict, nullable=True)
+    # Structure: {"enabled": bool, "auto_query_on_copilot": bool, "configured_at": str}
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

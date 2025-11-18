@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import Base, engine
-from app.routes import auth, works, reading, comments, ratings, browse, profile, engagement, notifications, dashboard, reading_lists, professional, factory, events, projects, analysis, workflows, knowledge_graph, copilot
+from app.routes import auth, works, reading, comments, ratings, browse, profile, engagement, notifications, dashboard, reading_lists, professional, factory, events, projects, analysis, workflows, knowledge_graph, copilot, notebooklm
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -61,6 +61,8 @@ app.include_router(workflows.router, prefix=settings.API_PREFIX)
 app.include_router(knowledge_graph.router, prefix=settings.API_PREFIX)
 # AI Copilot
 app.include_router(copilot.router, prefix=settings.API_PREFIX)
+# NotebookLM MCP Integration (Phase 9)
+app.include_router(notebooklm.router, prefix=settings.API_PREFIX)
 
 @app.get("/")
 async def root():
