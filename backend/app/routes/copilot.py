@@ -90,11 +90,11 @@ class WritingContextManager:
             if not project_graph:
                 return []
 
-            # Load graph
-            graph_service.load_from_json(project_graph.graph_data)
+            # Load graph using classmethod from_json()
+            kg = KnowledgeGraphService.from_json(project_graph.graph_data)
 
-            # Find entities mentioned in text
-            all_entities = graph_service.get_all_entities()
+            # Find entities mentioned in text (query_entities() with no filters = all)
+            all_entities = kg.query_entities()
             mentioned = []
 
             text_lower = text.lower()
@@ -102,7 +102,7 @@ class WritingContextManager:
                 if entity.name.lower() in text_lower:
                     mentioned.append({
                         "name": entity.name,
-                        "type": entity.entity_type,
+                        "type": entity.entity_type.value,  # Convert enum to string
                         "description": entity.description or "",
                         "attributes": entity.attributes
                     })
