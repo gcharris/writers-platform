@@ -69,6 +69,11 @@ CREATE INDEX idx_extraction_jobs_scene_id ON extraction_jobs(scene_id);
 CREATE INDEX idx_extraction_jobs_status ON extraction_jobs(status);
 CREATE INDEX idx_extraction_jobs_created_at ON extraction_jobs(created_at DESC);
 
+-- Composite index for common query pattern: filter by project_id + status, order by created_at
+-- Used in GET /projects/{id}/extraction-jobs?status=running
+-- Prevents slow queries when filtering jobs by project and status
+CREATE INDEX idx_extraction_jobs_project_status_created ON extraction_jobs(project_id, status, created_at DESC);
+
 -- Comments
 COMMENT ON TABLE project_graphs IS 'Stores knowledge graphs (NetworkX format) for each project';
 COMMENT ON TABLE extraction_jobs IS 'Tracks entity/relationship extraction jobs with timing and cost data';
