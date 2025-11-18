@@ -94,18 +94,6 @@ async def login_json(
         )
     }
 
-@router.get("/me", response_model=UserResponse)
-async def get_me(
-    current_user: User = Depends(get_current_user)
-):
-    """Get current authenticated user."""
-    return UserResponse(
-        id=str(current_user.id),
-        username=current_user.username,
-        email=current_user.email,
-        created_at=current_user.created_at.isoformat()
-    )
-
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
@@ -130,3 +118,15 @@ async def get_current_user(
         raise credentials_exception
 
     return user
+
+@router.get("/me", response_model=UserResponse)
+async def get_me(
+    current_user: User = Depends(get_current_user)
+):
+    """Get current authenticated user."""
+    return UserResponse(
+        id=str(current_user.id),
+        username=current_user.username,
+        email=current_user.email,
+        created_at=current_user.created_at.isoformat()
+    )
