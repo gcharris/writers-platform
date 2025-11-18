@@ -3,7 +3,7 @@
  * Automatically trigger knowledge graph extraction when scenes are saved
  */
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 interface UseAutoExtractionOptions {
   projectId: string;
@@ -22,6 +22,16 @@ export const useAutoExtraction = ({
   onExtractionStart,
   onExtractionComplete,
 }: UseAutoExtractionOptions) => {
+  // Track active polling intervals to clean up on unmount
+  const activeIntervalsRef = useRef<Set<NodeJS.Timeout>>(new Set());
+
+  // Cleanup all intervals on unmount
+  useEffect(() => {
+    return () => {
+      activeIntervalsRef.current.forEach(interval => clearInterval(interval));
+      activeIntervalsRef.current.clear();
+    };
+  }, []);
 
   // Trigger extraction for a scene
   const extractFromScene = useCallback(async (sceneId: string, sceneContent: string) => {
@@ -69,6 +79,7 @@ export const useAutoExtraction = ({
 
         if (!statusResponse.ok) {
           clearInterval(pollInterval);
+          activeIntervalsRef.current.delete(pollInterval);
           return;
         }
 
@@ -76,14 +87,19 @@ export const useAutoExtraction = ({
 
         if (statusData.status === 'completed') {
           clearInterval(pollInterval);
+          activeIntervalsRef.current.delete(pollInterval);
           if (onExtractionComplete) {
             onExtractionComplete();
           }
         } else if (statusData.status === 'failed') {
           clearInterval(pollInterval);
+          activeIntervalsRef.current.delete(pollInterval);
           console.error('Extraction failed:', statusData.error);
         }
       }, 2000);  // Poll every 2 seconds
+
+      // Track interval for cleanup
+      activeIntervalsRef.current.add(pollInterval);
 
     } catch (err) {
       console.error('Auto-extraction failed:', err);

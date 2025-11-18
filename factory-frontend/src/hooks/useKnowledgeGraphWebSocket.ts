@@ -30,6 +30,7 @@ export const useKnowledgeGraphWebSocket = ({
   const [error, setError] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const mountedRef = useRef(true);
 
   const connect = useCallback(() => {
     try {
@@ -74,9 +75,10 @@ export const useKnowledgeGraphWebSocket = ({
         setConnected(false);
         wsRef.current = null;
 
-        // Auto-reconnect
-        if (autoReconnect) {
+        // Auto-reconnect only if component is still mounted
+        if (autoReconnect && mountedRef.current) {
           reconnectTimeoutRef.current = setTimeout(() => {
+            if (!mountedRef.current) return; // Double-check before reconnecting
             console.log('Attempting to reconnect...');
             connect();
           }, reconnectInterval);
@@ -104,9 +106,11 @@ export const useKnowledgeGraphWebSocket = ({
 
   // Connect on mount
   useEffect(() => {
+    mountedRef.current = true;
     connect();
 
     return () => {
+      mountedRef.current = false;
       disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
