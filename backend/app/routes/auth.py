@@ -24,17 +24,30 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     """Register a new user."""
 
-    # Check if username exists
-    if db.query(User).filter(User.username == user_data.username).first():
-        raise HTTPException(status_code=400, detail="Username already registered")
-
     # Check if email exists
     if db.query(User).filter(User.email == user_data.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
 
+    # Generate unique username if not provided
+    if not user_data.username:
+        # Start with email prefix
+        base_username = user_data.email.split('@')[0]
+        username = base_username
+        counter = 1
+
+        # Add number suffix if username exists
+        while db.query(User).filter(User.username == username).first():
+            username = f"{base_username}{counter}"
+            counter += 1
+    else:
+        username = user_data.username
+        # Check if provided username exists
+        if db.query(User).filter(User.username == username).first():
+            raise HTTPException(status_code=400, detail="Username already registered")
+
     # Create user
     user = User(
-        username=user_data.username,
+        username=username,
         email=user_data.email,
         password_hash=get_password_hash(user_data.password)
     )
