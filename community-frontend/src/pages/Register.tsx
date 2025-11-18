@@ -7,6 +7,7 @@ import { useAuthStore } from '../store/authStore';
 export default function Register() {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -32,8 +33,6 @@ export default function Register() {
     setLoading(true);
 
     try {
-      // Extract username from email (part before @)
-      const username = email.split('@')[0];
       await authApi.register({ username, email, password });
 
       // Auto-login after registration
@@ -64,6 +63,23 @@ export default function Register() {
                 {error}
               </div>
             )}
+
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                Username
+              </label>
+              <input
+                id="username"
+                type="text"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                placeholder="johndoe"
+                minLength={3}
+                maxLength={50}
+              />
+            </div>
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
