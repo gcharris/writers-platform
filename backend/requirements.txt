@@ -74,6 +74,11 @@ charset-normalizer>=3.0.0  # Text encoding detection
 # Custom implementation using Claude/GPT for content analysis
 
 # ============================================
+# Error Monitoring & Observability
+# ============================================
+sentry-sdk[fastapi]>=1.40.0  # Production error tracking and monitoring
+
+# ============================================
 # REMOVED FOR DEPLOYMENT OPTIMIZATION:
 # ============================================
 # cognee>=0.1.26  # REMOVED: Not actively used (use_cognee=False)
