@@ -970,9 +970,12 @@ async def run_extraction_job(
     Background task to run entity/relationship extraction.
 
     Updates job status in database as it progresses.
+
+    Timeout: 5 minutes per job to prevent runaway processes.
     """
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
+    import asyncio
 
     # Create new DB session for background task
     engine = create_engine(os.getenv('DATABASE_URL'))
@@ -1004,43 +1007,57 @@ async def run_extraction_job(
             kg = KnowledgeGraphService(project_id)
             existing_entities = []
 
-        # Run extraction
+        # Run extraction with timeout (5 minutes max)
+        EXTRACTION_TIMEOUT_SECONDS = 300
         entities = []
         relationships = []
         tokens_used = 0
         cost = 0.0
 
-        if extractor_type == "llm":
-            # LLM extraction
-            extractor = LLMExtractor(model_name=model_name or "claude-sonnet-4.5")
+        try:
+            async def run_extraction():
+                """Inner function to run extraction (wrapped in timeout)"""
+                nonlocal entities, relationships, tokens_used, cost
 
-            entities = await extractor.extract_entities(
-                scene_content,
-                scene_id,
-                existing_entities=existing_entities
+                if extractor_type == "llm":
+                    # LLM extraction
+                    extractor = LLMExtractor(model_name=model_name or "claude-sonnet-4.5")
+
+                    entities = await extractor.extract_entities(
+                        scene_content,
+                        scene_id,
+                        existing_entities=existing_entities
+                    )
+
+                    relationships = await extractor.extract_relationships(
+                        scene_content,
+                        scene_id,
+                        entities
+                    )
+
+                    # Estimate tokens (rough)
+                    tokens_used = len(scene_content.split()) * 2  # Rough estimate
+                    cost = tokens_used / 1000 * 0.003  # Claude pricing
+
+                elif extractor_type == "ner":
+                    # NER extraction (fast, no cost)
+                    # Run sync NER extraction in thread pool to avoid blocking
+                    extractor = NERExtractor()
+                    entities = await asyncio.to_thread(
+                        extractor.extract_entities,
+                        scene_content,
+                        scene_id
+                    )
+                    # NER doesn't extract relationships
+
+            # Run with timeout protection
+            await asyncio.wait_for(run_extraction(), timeout=EXTRACTION_TIMEOUT_SECONDS)
+
+        except asyncio.TimeoutError:
+            raise Exception(
+                f"Extraction timed out after {EXTRACTION_TIMEOUT_SECONDS} seconds. "
+                f"Scene may be too long or API is unresponsive."
             )
-
-            relationships = await extractor.extract_relationships(
-                scene_content,
-                scene_id,
-                entities
-            )
-
-            # Estimate tokens (rough)
-            tokens_used = len(scene_content.split()) * 2  # Rough estimate
-            cost = tokens_used / 1000 * 0.003  # Claude pricing
-
-        elif extractor_type == "ner":
-            # NER extraction (fast, no cost)
-            # Run sync NER extraction in thread pool to avoid blocking
-            import asyncio
-            extractor = NERExtractor()
-            entities = await asyncio.to_thread(
-                extractor.extract_entities,
-                scene_content,
-                scene_id
-            )
-            # NER doesn't extract relationships
 
         # Add entities to graph
         for entity in entities:
