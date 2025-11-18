@@ -12,8 +12,10 @@ from datetime import datetime
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPException
 from sqlalchemy.orm import Session
+from jose import JWTError, jwt
 
 from app.core.database import get_db
+from app.core.config import settings
 from app.routes.auth import get_current_user
 from app.models.user import User
 from app.models.project import Project
@@ -25,6 +27,51 @@ router = APIRouter(prefix="/copilot", tags=["copilot"])
 
 # Active WebSocket connections: {project_id: {websocket}}
 active_connections: Dict[str, Set[WebSocket]] = {}
+
+
+# ============================================================================
+# WebSocket Authentication Helper
+# ============================================================================
+
+async def authenticate_websocket(token: Optional[str], db: Session) -> User:
+    """
+    Authenticate WebSocket connection using JWT token.
+
+    Args:
+        token: JWT token from query parameter
+        db: Database session
+
+    Returns:
+        Authenticated User object
+
+    Raises:
+        WebSocketDisconnect: If authentication fails
+    """
+    if not token:
+        logger.warning("WebSocket connection attempted without token")
+        raise WebSocketDisconnect(code=1008, reason="Authentication required")
+
+    try:
+        # Decode JWT token
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        user_id: str = payload.get("sub")
+
+        if user_id is None:
+            logger.warning("WebSocket token missing user_id")
+            raise WebSocketDisconnect(code=1008, reason="Invalid token")
+
+    except JWTError as e:
+        logger.warning(f"WebSocket JWT decode failed: {e}")
+        raise WebSocketDisconnect(code=1008, reason="Invalid token")
+
+    # Load user from database
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if user is None:
+        logger.warning(f"WebSocket user not found: {user_id}")
+        raise WebSocketDisconnect(code=1008, reason="User not found")
+
+    return user
 
 
 # ============================================================================
@@ -335,9 +382,12 @@ Continue the text smoothly from where it left off:"""
 async def copilot_stream(
     websocket: WebSocket,
     project_id: str,
+    token: Optional[str] = None  # JWT token from query parameter
 ):
     """
     WebSocket endpoint for real-time writing copilot.
+
+    **Authentication Required**: Pass JWT token as query parameter `token`.
 
     Receives:
     - text: Current editor content
@@ -351,7 +401,11 @@ async def copilot_stream(
 
     Example client:
     ```javascript
-    const ws = new WebSocket('ws://localhost:8000/api/copilot/{project_id}/stream');
+    // Get token from login response
+    const token = localStorage.getItem('auth_token');
+
+    // Connect with authentication
+    const ws = new WebSocket(`ws://localhost:8000/api/copilot/${project_id}/stream?token=${token}`);
 
     ws.send(JSON.stringify({
         text: "Mickey walked into the",
@@ -365,6 +419,35 @@ async def copilot_stream(
     };
     ```
     """
+    # Get database session BEFORE accepting WebSocket
+    from app.core.database import SessionLocal
+    db = SessionLocal()
+
+    try:
+        # CRITICAL: Authenticate BEFORE accepting connection
+        user = await authenticate_websocket(token, db)
+
+        # Verify user owns the project
+        project = db.query(Project).filter(
+            Project.id == project_id,
+            Project.user_id == user.id
+        ).first()
+
+        if not project:
+            logger.warning(f"User {user.id} attempted to access unauthorized project {project_id}")
+            await websocket.close(code=1008, reason="Unauthorized")
+            return
+
+    except WebSocketDisconnect:
+        # Authentication failed - close before accepting
+        await websocket.close(code=1008, reason="Authentication failed")
+        return
+    except Exception as e:
+        logger.error(f"WebSocket auth error: {e}", exc_info=True)
+        await websocket.close(code=1011, reason="Internal error")
+        return
+
+    # Authentication successful - accept connection
     await websocket.accept()
 
     # Add to active connections
@@ -372,11 +455,7 @@ async def copilot_stream(
         active_connections[project_id] = set()
     active_connections[project_id].add(websocket)
 
-    logger.info(f"Copilot connected for project {project_id}")
-
-    # Get database session (simplified - in production, use dependency injection)
-    from app.core.database import SessionLocal
-    db = SessionLocal()
+    logger.info(f"Copilot connected for project {project_id} (user: {user.username})")
 
     try:
         context_manager = WritingContextManager(db)
