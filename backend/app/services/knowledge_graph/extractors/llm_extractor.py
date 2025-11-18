@@ -100,13 +100,10 @@ Be thorough. Extract ALL meaningful entities, including:
             # Parse JSON from output
             output = result['output']
 
-            # Extract JSON array (handle markdown code blocks)
-            json_match = re.search(r'\[[\s\S]*\]', output)
-            if not json_match:
-                logger.error(f"No JSON array found in LLM output")
+            # Extract JSON with robust error handling
+            entities_data = self._extract_json_from_llm_output(output)
+            if not entities_data:
                 return []
-
-            entities_data = json.loads(json_match.group(0))
 
             # Convert to Entity objects
             entities = []
@@ -204,14 +201,11 @@ Be thorough. Extract ALL relationships shown or implied in the scene.
                 max_tokens=3000
             )
 
-            # Parse JSON
+            # Parse JSON with robust error handling
             output = result['output']
-            json_match = re.search(r'\[[\s\S]*\]', output)
-            if not json_match:
-                logger.error(f"No JSON array found in relationship extraction")
+            relationships_data = self._extract_json_from_llm_output(output)
+            if not relationships_data:
                 return []
-
-            relationships_data = json.loads(json_match.group(0))
 
             # Convert to Relationship objects
             relationships = []
@@ -250,6 +244,36 @@ Be thorough. Extract ALL relationships shown or implied in the scene.
         except Exception as e:
             logger.error(f"Relationship extraction failed: {e}")
             return []
+
+    def _extract_json_from_llm_output(self, output: str) -> Optional[List[dict]]:
+        """
+        Robust JSON extraction from LLM output.
+        Handles markdown code blocks and malformed responses.
+        """
+        # Try 1: Extract from markdown code block
+        code_block_match = re.search(r'```(?:json)?\s*(\[[\s\S]*?\])\s*```', output)
+        if code_block_match:
+            json_str = code_block_match.group(1)
+        else:
+            # Try 2: Find JSON array directly
+            json_match = re.search(r'\[[\s\S]*\]', output)
+            if not json_match:
+                logger.error("No JSON array found in LLM output")
+                logger.debug(f"LLM output (first 500 chars): {output[:500]}")
+                return None
+            json_str = json_match.group(0)
+
+        # Parse JSON with error handling
+        try:
+            data = json.loads(json_str)
+            if not isinstance(data, list):
+                logger.error(f"Expected JSON array, got {type(data)}")
+                return None
+            return data
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON from LLM: {e}")
+            logger.debug(f"Problematic JSON (first 500 chars): {json_str[:500]}")
+            return None
 
     def _create_entity_id(self, name: str) -> str:
         """Create normalized entity ID from name."""
