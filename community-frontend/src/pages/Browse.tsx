@@ -4,16 +4,34 @@ import { useQuery } from '@tanstack/react-query';
 import { worksApi } from '../api/community';
 import Badge from '../components/Badge';
 import type { Work, BrowseFilters } from '../types';
-import { HeartIcon, EyeIcon, BookOpenIcon } from '@heroicons/react/24/outline';
+import { HeartIcon, EyeIcon, BookOpenIcon, MagnifyingGlassIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
 export default function Browse() {
   const [filters, setFilters] = useState<BrowseFilters>({
     sort_by: 'recent',
   });
 
+  // Entity-based discovery state
+  const [entitySearch, setEntitySearch] = useState({
+    entity_name: '',
+    entity_type: ''
+  });
+  const [isEntitySearchActive, setIsEntitySearchActive] = useState(false);
+
   const { data: works, isLoading } = useQuery({
-    queryKey: ['works', filters],
-    queryFn: () => worksApi.browse(filters),
+    queryKey: isEntitySearchActive
+      ? ['works', 'entity', entitySearch]
+      : ['works', filters],
+    queryFn: () => {
+      if (isEntitySearchActive && entitySearch.entity_name) {
+        return worksApi.browseByEntity({
+          entity_name: entitySearch.entity_name,
+          entity_type: entitySearch.entity_type || undefined,
+          sort_by: filters.sort_by || 'created_at',
+        });
+      }
+      return worksApi.browse(filters);
+    },
   });
 
   const handleFilterChange = (key: keyof BrowseFilters, value: string) => {
@@ -21,6 +39,17 @@ export default function Browse() {
       ...prev,
       [key]: value || undefined,
     }));
+  };
+
+  const handleEntitySearch = () => {
+    if (entitySearch.entity_name.trim()) {
+      setIsEntitySearchActive(true);
+    }
+  };
+
+  const clearEntitySearch = () => {
+    setEntitySearch({ entity_name: '', entity_type: '' });
+    setIsEntitySearchActive(false);
   };
 
   const formatNumber = (num: number) => {
@@ -46,10 +75,90 @@ export default function Browse() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Browse Works</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            {isEntitySearchActive ? '🎯 Entity Search Results' : 'Browse Works'}
+          </h1>
           <p className="text-gray-600">
-            {works?.length || 0} work{works?.length !== 1 ? 's' : ''} available
+            {works?.length || 0} work{works?.length !== 1 ? 's' : ''}
+            {isEntitySearchActive
+              ? ` featuring "${entitySearch.entity_name}"${entitySearch.entity_type ? ` (${entitySearch.entity_type})` : ''}`
+              : ' available'}
           </p>
+        </div>
+
+        {/* NEW: Entity-Based Discovery */}
+        <div className="bg-gradient-to-br from-purple-50 via-blue-50 to-sky-50 border-2 border-purple-200 rounded-xl p-6 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <SparklesIcon className="h-6 w-6 text-purple-600" />
+            <h2 className="text-lg font-bold text-gray-900">🎯 NEW: Entity-Based Discovery</h2>
+          </div>
+          <p className="text-sm text-gray-700 mb-4">
+            Find stories by characters, locations, or themes! Try searching for "Mickey", "Shanghai", or "AI"
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className="md:col-span-1">
+              <label htmlFor="entity_name" className="block text-sm font-medium text-gray-700 mb-2">
+                Entity Name
+              </label>
+              <input
+                id="entity_name"
+                type="text"
+                value={entitySearch.entity_name}
+                onChange={(e) => setEntitySearch({ ...entitySearch, entity_name: e.target.value })}
+                placeholder="e.g., Mickey, Shanghai, AI..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                onKeyPress={(e) => e.key === 'Enter' && handleEntitySearch()}
+              />
+            </div>
+
+            <div className="md:col-span-1">
+              <label htmlFor="entity_type" className="block text-sm font-medium text-gray-700 mb-2">
+                Entity Type (Optional)
+              </label>
+              <select
+                id="entity_type"
+                value={entitySearch.entity_type}
+                onChange={(e) => setEntitySearch({ ...entitySearch, entity_type: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                <option value="">Any Type</option>
+                <option value="character">Character</option>
+                <option value="location">Location</option>
+                <option value="theme">Theme</option>
+                <option value="object">Object</option>
+                <option value="organization">Organization</option>
+              </select>
+            </div>
+
+            <div className="md:col-span-1 flex items-end gap-2">
+              <button
+                onClick={handleEntitySearch}
+                disabled={!entitySearch.entity_name.trim()}
+                className="flex-1 px-6 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <MagnifyingGlassIcon className="h-5 w-5" />
+                Search
+              </button>
+              {isEntitySearchActive && (
+                <button
+                  onClick={clearEntitySearch}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+
+          {isEntitySearchActive && (
+            <div className="mt-4 p-3 bg-purple-100 border border-purple-300 rounded-lg">
+              <p className="text-sm text-purple-900">
+                <strong>Searching for:</strong> {entitySearch.entity_name}
+                {entitySearch.entity_type && ` (${entitySearch.entity_type})`}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Filters */}
