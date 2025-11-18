@@ -382,14 +382,36 @@ class KnowledgeGraphService:
 
     @classmethod
     def from_json(cls, json_str: str) -> 'KnowledgeGraphService':
-        """Load graph from JSON."""
-        data = json.loads(json_str)
+        """Load graph from JSON with validation."""
+        # Parse JSON with error handling
+        try:
+            data = json.loads(json_str)
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON in graph data: {e}")
+            raise ValueError(f"Failed to parse graph JSON: {e}")
+
+        # Validate required keys
+        required_keys = ['metadata', 'graph', 'entities', 'relationships']
+        missing = [k for k in required_keys if k not in data]
+        if missing:
+            raise ValueError(f"Missing required keys in graph data: {missing}")
+
+        # Validate metadata has project_id
+        if 'project_id' not in data.get('metadata', {}):
+            raise ValueError("Graph metadata missing 'project_id'")
 
         # Create instance
-        kg = cls(project_id=data['metadata']['project_id'])
+        try:
+            kg = cls(project_id=data['metadata']['project_id'])
+        except (KeyError, TypeError) as e:
+            raise ValueError(f"Invalid project_id in metadata: {e}")
 
-        # Restore graph
-        kg.graph = nx.node_link_graph(data['graph'], directed=True, multigraph=True)
+        # Restore NetworkX graph with validation
+        try:
+            kg.graph = nx.node_link_graph(data['graph'], directed=True, multigraph=True)
+        except Exception as e:
+            logger.error(f"Failed to deserialize NetworkX graph: {e}")
+            raise ValueError(f"Invalid graph structure: {e}")
 
         # Restore entities
         for eid, entity_data in data['entities'].items():
